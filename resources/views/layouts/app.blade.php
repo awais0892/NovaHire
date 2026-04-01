@@ -6,117 +6,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ $title ?? 'Dashboard' }} | TailAdmin - Laravel Tailwind CSS Admin Dashboard Template</title>
+    <title>{{ $title ?? 'Dashboard' }} | NovaHire</title>
 
     <!-- Scripts -->
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-
-    <!-- Alpine.js -->
-    {{-- <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script> --}}
-
-    <!-- Theme Store -->
-    <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.store('theme', {
-                init() {
-                    const savedTheme = localStorage.getItem('theme');
-                    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' :
-                        'light';
-                    this.theme = savedTheme || systemTheme;
-                    this.updateTheme();
-                },
-                theme: 'light',
-                toggle() {
-                    this.theme = this.theme === 'light' ? 'dark' : 'light';
-                    localStorage.setItem('theme', this.theme);
-                    this.updateTheme();
-                },
-                updateTheme() {
-                    const html = document.documentElement;
-                    const body = document.body;
-                    if (this.theme === 'dark') {
-                        html.classList.add('dark');
-                        body.classList.add('dark', 'bg-gray-900');
-                    } else {
-                        html.classList.remove('dark');
-                        body.classList.remove('dark', 'bg-gray-900');
-                    }
-                }
-            });
-
-            Alpine.store('sidebar', {
-                // Initialize based on screen size
-                isExpanded: window.innerWidth >= 1280, // true for desktop, false for mobile
-                isMobileOpen: false,
-                isHovered: false,
-
-                toggleExpanded() {
-                    this.isExpanded = !this.isExpanded;
-                    // When toggling desktop sidebar, ensure mobile menu is closed
-                    this.isMobileOpen = false;
-                },
-
-                toggleMobileOpen() {
-                    this.isMobileOpen = !this.isMobileOpen;
-                    // Don't modify isExpanded when toggling mobile menu
-                },
-
-                setMobileOpen(val) {
-                    this.isMobileOpen = val;
-                },
-
-                setHovered(val) {
-                    // Only allow hover effects on desktop when sidebar is collapsed
-                    if (window.innerWidth >= 1280 && !this.isExpanded) {
-                        this.isHovered = val;
-                    }
-                }
-            });
-        });
-    </script>
+    @include('partials.vite-assets')
+    @livewireStyles
 
     <!-- Apply dark mode immediately to prevent flash -->
     <script>
-        (function() {
+        (function () {
             const savedTheme = localStorage.getItem('theme');
             const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
             const theme = savedTheme || systemTheme;
             if (theme === 'dark') {
                 document.documentElement.classList.add('dark');
-                document.body.classList.add('dark', 'bg-gray-900');
             } else {
                 document.documentElement.classList.remove('dark');
-                document.body.classList.remove('dark', 'bg-gray-900');
             }
         })();
     </script>
-    
+
 </head>
 
-<body
-    x-data="{ 'loaded': true}"
-    x-init="$store.sidebar.isExpanded = window.innerWidth >= 1280;
-    const checkMobile = () => {
-        if (window.innerWidth < 1280) {
-            $store.sidebar.setMobileOpen(false);
-            $store.sidebar.isExpanded = false;
-        } else {
-            $store.sidebar.isMobileOpen = false;
-            $store.sidebar.isExpanded = true;
-        }
-    };
-    window.addEventListener('resize', checkMobile);">
+<body class="min-h-screen overflow-x-hidden bg-gray-50 text-gray-900 antialiased dark:bg-gray-950 dark:text-gray-100" x-data="{ loaded: true }">
 
     {{-- preloader --}}
-    <x-common.preloader/>
+    <x-common.preloader />
     {{-- preloader end --}}
 
-    <div class="min-h-screen xl:flex">
-        @include('layouts.backdrop')
+    <div class="min-h-screen overflow-x-hidden bg-gray-50 dark:bg-gray-950 xl:flex">
         @include('layouts.sidebar')
 
-        <div class="flex-1 transition-all duration-300 ease-in-out"
-            :class="{
+        <div class="min-w-0 flex-1 transition-all duration-300 ease-in-out" :class="{
                 'xl:ml-[290px]': $store.sidebar.isExpanded || $store.sidebar.isHovered,
                 'xl:ml-[90px]': !$store.sidebar.isExpanded && !$store.sidebar.isHovered,
                 'ml-0': $store.sidebar.isMobileOpen
@@ -124,15 +45,33 @@
             <!-- app header start -->
             @include('layouts.app-header')
             <!-- app header end -->
-            <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
+            <div class="mx-auto w-full max-w-(--breakpoint-2xl) min-w-0 p-4 text-gray-900 dark:text-gray-100 md:p-6">
+                @if(isset($slot) && ($slot instanceof \Illuminate\Contracts\Support\Htmlable || is_string($slot)))
+                    {{ $slot }}
+                @endif
                 @yield('content')
             </div>
+            @include('layouts.app-footer')
         </div>
 
     </div>
 
-</body>
+    <!-- Global Toast -->
+    <div x-cloak x-data class="fixed bottom-6 right-6 z-50">
+        <div x-show="$store.toast.visible" x-transition.opacity.duration.150ms
+            class="rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-lg"
+            :class="{
+                'bg-emerald-600': $store.toast.type === 'success' || !$store.toast.type,
+                'bg-red-600': $store.toast.type === 'error',
+                'bg-amber-500': $store.toast.type === 'warning'
+            }">
+            <span x-text="$store.toast.message"></span>
+        </div>
+        @stack('toasts')
+    </div>
 
-@stack('scripts')
+    @stack('scripts')
+    @livewireScripts
+</body>
 
 </html>

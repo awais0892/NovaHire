@@ -1,5 +1,5 @@
-<div class="rounded-2xl border border-gray-200 bg-gray-100 dark:border-gray-800 dark:bg-white/[0.03]">
-    <div class="shadow-default rounded-2xl bg-white px-5 pb-11 pt-5 dark:bg-gray-900 sm:px-6 sm:pt-6">
+<div class="app-card glow-strong bg-gray-100 dark:bg-white/[0.03]" data-glow-proximity="132">
+    <div class="app-subcard glow-subcard shadow-default m-1.5 bg-white px-5 pb-11 pt-5 dark:bg-gray-900 sm:px-6 sm:pt-6" data-glow-proximity="92">
         <div class="flex justify-between">
             <div>
                 <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">
@@ -78,4 +78,3 @@
         </div>
     </div>
 </div>
-

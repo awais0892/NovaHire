@@ -178,8 +178,8 @@ class SidebarController extends Controller
                         'subItems' => [
                             ['name' => 'Sign In', 'path' => '/signin', 'pro' => false],
                             ['name' => 'Sign Up', 'path' => '/signup', 'pro' => false],
-                            ['name' => 'Reset Password', 'path' => '/reset-password', 'pro' => false],
-                            ['name' => 'Two Step Verification', 'path' => '/two-step-verification', 'pro' => false],
+                            ['name' => 'Account Help', 'path' => '/signin', 'pro' => false],
+                            ['name' => 'Security', 'path' => '/account/settings', 'pro' => false],
                         ],
                     ],
                 ],
