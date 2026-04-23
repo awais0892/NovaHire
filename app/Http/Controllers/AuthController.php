@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Candidate;
 use App\Models\User;
 use App\Notifications\CandidateRegistrationVerification;
 use App\Notifications\TwoFactorOtpCode;
+use App\Services\Auth\CandidateOnboardingService;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
-use Spatie\Permission\Models\Role;
 use App\Support\AuditLogger;
 use Illuminate\View\View;
 
@@ -23,6 +22,10 @@ class AuthController extends Controller
     private const TWO_FACTOR_MAX_ATTEMPTS = 5;
     private const TWO_FACTOR_RESEND_COOLDOWN_SECONDS = 45;
     private ?string $lastMailDispatchError = null;
+
+    public function __construct(
+        private readonly CandidateOnboardingService $candidateOnboarding,
+    ) {}
 
     public function showLogin()
     {
@@ -42,24 +45,25 @@ class AuthController extends Controller
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
-        $user = \App\Models\User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => $validated['password'],
-            'two_factor_enabled' => false,
-        ]);
+        $validated['email'] = Str::lower(trim((string) $validated['email']));
 
-        $candidateRole = Role::findOrCreate('candidate', 'web');
-        $user->assignRole($candidateRole);
+        try {
+            $user = $this->candidateOnboarding->createCandidateUser([
+                'name' => trim((string) $validated['name']),
+                'email' => $validated['email'],
+                'password' => $validated['password'],
+                'status' => 'active',
+                'two_factor_enabled' => false,
+            ]);
+        } catch (\Throwable $exception) {
+            report($exception);
 
-        Candidate::updateOrCreate(
-            ['user_id' => $user->id],
-            [
-                'email' => $user->email,
-                'name' => $user->name,
-                'company_id' => $user->company_id,
-            ]
-        );
+            return back()
+                ->withErrors([
+                    'email' => 'Unable to create your account right now. Please try again.',
+                ])
+                ->onlyInput('name', 'email');
+        }
 
         $verificationSent = $this->dispatchRegistrationVerification($user);
         $request->session()->put('auth.registration_verification_email', $user->email);
@@ -72,7 +76,7 @@ class AuthController extends Controller
         if (!$verificationSent) {
             return redirect()->route('register.verify.notice')
                 ->withErrors([
-                    'email' => $this->lastMailDispatchError ?? 'Account created, but verification email could not be sent. Please try resend.',
+                    'email' => $this->lastMailDispatchError ?? 'Account created, but we could not start email verification right now. Please use resend from the next screen.',
                 ]);
         }
 
@@ -86,12 +90,17 @@ class AuthController extends Controller
             'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
+        $credentials['email'] = Str::lower(trim((string) $credentials['email']));
 
         $remember = (bool) $request->boolean('remember');
 
         \Log::info('Login attempt', ['email' => $credentials['email']]);
 
-        if (Auth::attempt($credentials, $remember)) {
+        if (Auth::attempt([
+            'email' => $credentials['email'],
+            'password' => $credentials['password'],
+            'status' => 'active',
+        ], $remember)) {
             $user = Auth::user();
 
             if ($user && $this->requiresRegistrationVerification($user)) {
@@ -189,33 +198,35 @@ class AuthController extends Controller
     public function resendRegistrationVerification(Request $request): RedirectResponse
     {
         $email = (string) $request->session()->get('auth.registration_verification_email', '');
+        $fromSession = $email !== '';
+
         if ($email === '') {
             $validated = $request->validate([
                 'email' => ['required', 'email'],
             ]);
-            $email = (string) $validated['email'];
+            $email = Str::lower(trim((string) $validated['email']));
         }
 
         $user = User::query()->where('email', $email)->first();
-        if (!$user) {
-            return back()->withErrors([
-                'email' => 'We could not find an account for this email.',
-            ]);
-        }
 
-        if ($user->hasVerifiedEmail()) {
+        if ($fromSession && $user && $user->hasVerifiedEmail()) {
             return redirect()->route('login')->with('status', 'Email already verified. Please sign in.');
         }
 
-        if (!$this->dispatchRegistrationVerification($user)) {
-            return back()->withErrors([
-                'email' => $this->lastMailDispatchError ?? 'Unable to resend verification email right now. Please try again.',
-            ]);
+        if ($user && !$user->hasVerifiedEmail()) {
+            if (!$this->dispatchRegistrationVerification($user)) {
+                return back()->withErrors([
+                    'email' => $this->lastMailDispatchError ?? 'Unable to resend verification email right now. Please try again.',
+                ]);
+            }
+
+            $request->session()->put('auth.registration_verification_email', $user->email);
         }
 
-        $request->session()->put('auth.registration_verification_email', $user->email);
-
-        return back()->with('status', 'A new verification email has been sent.');
+        return back()->with(
+            'status',
+            'If an unverified account exists for ' . $this->maskEmail($email) . ', we sent a fresh verification link.'
+        );
     }
 
     public function verifyRegistrationEmail(Request $request, int $id, string $hash): RedirectResponse
@@ -485,10 +496,7 @@ class AuthController extends Controller
                 'error' => $exception->getMessage(),
             ]);
 
-            $this->lastMailDispatchError = $this->humanizeMailDispatchError(
-                $exception,
-                'Account created, but verification email could not be sent. Please try resend.'
-            );
+            $this->lastMailDispatchError = 'We could not send the verification email right now. Please try again in a moment.';
 
             return false;
         }

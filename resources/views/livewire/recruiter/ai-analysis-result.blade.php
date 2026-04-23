@@ -10,7 +10,7 @@
     $isFailed = $cvStatus === 'failed';
     $isProcessed = $cvStatus === 'processed';
 
-    $hasAnalysis = (bool) (
+    $hasAnalysis = !$isProcessing && (bool) (
         $analysis
         && (
             $hasReasoning
@@ -27,6 +27,9 @@
         $score >= 60 => 'text-warning-600',
         default => 'text-error-600',
     };
+    $recommendationLabel = strtoupper(str_replace('_', ' ', $analysis->recommendation ?? 'maybe'));
+    $modalMatchedSkills = collect($analysis->matched_skills ?? [])->filter()->take(6)->values();
+    $modalMissingSkills = collect($analysis->missing_skills ?? [])->filter()->take(6)->values();
 
     $statusTone = match ($application->status) {
         'hired' => 'bg-success-100 text-success-700 dark:bg-success-500/20 dark:text-success-300',
@@ -45,10 +48,26 @@
     $syncQueueBlocksOpenAi = (string) config('queue.default', 'sync') === 'sync'
         && !filter_var((string) env('AI_ALLOW_OPENAI_WITH_SYNC_QUEUE', false), FILTER_VALIDATE_BOOL)
         && !filter_var((string) env('AI_FORCE_OPENAI', false), FILTER_VALIDATE_BOOL);
+
+    $analysisLottiePayload = [
+        'autoplay' => true,
+        'loop' => true,
+        'speed' => 1,
+        'size' => 280,
+        'src' => '/animations/ai-loading-model.json',
+    ];
+    $analysisLottiePayloadJson = json_encode($analysisLottiePayload, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?: '{}';
 @endphp
 
 <div class="mx-auto max-w-7xl space-y-6 p-4 md:p-6"
     wire:key="analysis-root-{{ $application->id }}"
+    x-data="aiAnalysisFlow({
+        analysisModalOpen: @entangle('analysisModalOpen').live,
+        isProcessingState: @entangle('isProcessingState').live,
+        hasAnalysisState: @entangle('hasAnalysisState').live,
+        isFailedState: @entangle('isFailedState').live,
+    })"
+    x-init="init()"
     @if($shouldPoll) wire:poll.6s @endif>
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div class="flex min-w-0 items-start gap-3">
@@ -71,16 +90,16 @@
             <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider {{ $statusTone }}">
                 {{ $application->status }}
             </span>
-            <button type="button" wire:click="runAnalysisNow" wire:loading.attr="disabled" class="btn btn-primary btn-sm disabled:opacity-50 disabled:cursor-wait">
-                <span wire:loading.remove wire:target="runAnalysisNow">Run Analysis Now</span>
-                <span wire:loading wire:target="runAnalysisNow">Analyzing...</span>
+            <button type="button" @click="triggerAnalysis('analysis')" :disabled="requestInFlight || isLoadingUi" class="btn btn-primary btn-sm disabled:opacity-50 disabled:cursor-wait">
+                <span x-show="!requestInFlight && !isLoadingUi">Run Analysis Now</span>
+                <span x-cloak x-show="requestInFlight || isLoadingUi">Analyzing...</span>
             </button>
-            <button type="button" wire:click="reanalyse" wire:loading.attr="disabled" class="btn btn-outline btn-sm disabled:opacity-50 disabled:cursor-wait">
-                <span wire:loading.remove wire:target="reanalyse">Refresh Analysis</span>
-                <span wire:loading wire:target="reanalyse">Analyzing...</span>
+            <button type="button" @click="triggerAnalysis('re-analysis')" :disabled="requestInFlight || isLoadingUi" class="btn btn-outline btn-sm disabled:opacity-50 disabled:cursor-wait">
+                <span x-show="!requestInFlight && !isLoadingUi">Refresh Analysis</span>
+                <span x-cloak x-show="requestInFlight || isLoadingUi">Analyzing...</span>
             </button>
             @if($hasAnalysis)
-                <a href="{{ route('recruiter.analysis.report', $application->id) }}" class="btn btn-primary btn-sm">
+                <a x-cloak x-show="!isLoadingUi" href="{{ route('recruiter.analysis.report', $application->id) }}" class="btn btn-primary btn-sm">
                     Export Report
                 </a>
             @endif
@@ -95,6 +114,91 @@
         <div class="alert alert-error">{{ session('error') }}</div>
     @endif
 
+    <section x-cloak x-show="analysisModalOpen && !isLoadingUi && hasAnalysisState && !isFailedState" x-transition.opacity.duration.250ms class="fixed inset-0 z-[1100] flex items-center justify-center px-4 py-6" role="dialog" aria-modal="true" aria-label="AI Analysis Result Modal">
+        <div class="absolute inset-0 h-full w-full bg-slate-950/70 backdrop-blur-md" aria-hidden="true"></div>
+
+        <div class="relative z-[1] w-full max-w-4xl overflow-hidden rounded-3xl border border-slate-700/60 bg-slate-950 text-white shadow-[0_24px_80px_rgba(2,6,23,0.65)]">
+            <div class="border-b border-white/10 bg-white/[0.03] px-5 py-4 sm:px-7">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-300">
+                            AI Recruiter Engine
+                        </p>
+                        <h2 class="mt-1 text-lg font-bold text-emerald-300 sm:text-xl">
+                            Analysis complete
+                        </h2>
+                        <p class="mt-1 text-sm text-slate-300">
+                            Recruiter-ready summary generated from section-by-section CV analysis.
+                        </p>
+                    </div>
+                    <button type="button" @click="closeModal()" class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 text-slate-300 transition hover:border-white/40 hover:text-white" aria-label="Close analysis result modal">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="max-h-[78vh] overflow-y-auto px-5 py-6 sm:px-7 sm:py-7">
+                <div class="space-y-5">
+                    <div class="grid gap-4 md:grid-cols-3">
+                        <div class="rounded-xl border border-emerald-400/30 bg-emerald-500/10 p-4">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-200">Match Score</p>
+                            <p class="mt-2 text-3xl font-bold text-emerald-100">{{ $score }}%</p>
+                        </div>
+                        <div class="rounded-xl border border-brand-400/30 bg-brand-500/10 p-4">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-200">Recommendation</p>
+                            <p class="mt-2 text-lg font-bold text-white">{{ $recommendationLabel }}</p>
+                        </div>
+                        <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-300">Tokens Used</p>
+                            <p class="mt-2 text-2xl font-bold text-white">{{ $analysis->tokens_used ?? 0 }}</p>
+                        </div>
+                    </div>
+
+                    <div class="grid gap-4 lg:grid-cols-2">
+                        <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Strengths</p>
+                            <p class="mt-2 text-sm text-slate-100">{{ $analysis->strengths ?: 'No strengths provided.' }}</p>
+                        </div>
+                        <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Gaps</p>
+                            <p class="mt-2 text-sm text-slate-100">{{ $analysis->weaknesses ?: 'No gaps provided.' }}</p>
+                        </div>
+                    </div>
+
+                    <div class="grid gap-4 lg:grid-cols-2">
+                        <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Top Matched Skills</p>
+                            <div class="mt-3 flex flex-wrap gap-2">
+                                @forelse($modalMatchedSkills as $skill)
+                                    <span class="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-100">{{ $skill }}</span>
+                                @empty
+                                    <span class="text-xs text-slate-300">No matched skills listed.</span>
+                                @endforelse
+                            </div>
+                        </div>
+                        <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Top Missing Skills</p>
+                            <div class="mt-3 flex flex-wrap gap-2">
+                                @forelse($modalMissingSkills as $skill)
+                                    <span class="rounded-full bg-amber-500/20 px-3 py-1 text-xs font-semibold text-amber-100">{{ $skill }}</span>
+                                @empty
+                                    <span class="text-xs text-slate-300">No missing skills listed.</span>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Reasoning Snapshot</p>
+                        <p class="mt-2 text-sm text-slate-100">{{ \Illuminate\Support\Str::limit($analysis->reasoning ?: 'No reasoning available.', 420) }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     @if($fallbackDetected)
         <div class="rounded-xl border border-warning-200 bg-warning-50 px-4 py-3 text-xs font-semibold text-warning-700 dark:border-warning-700/30 dark:bg-warning-500/10 dark:text-warning-300">
             Fallback analysis detected.
@@ -105,6 +209,23 @@
             @endif
         </div>
     @endif
+
+    <section x-cloak x-show="isLoadingUi" x-transition.opacity.duration.220ms class="fixed inset-0 z-[1085]">
+        <div class="absolute inset-0 bg-slate-950/38 backdrop-blur-xl backdrop-saturate-150"></div>
+
+        <div class="relative z-[1] flex h-full w-full items-center justify-center px-4 text-center">
+            <div>
+                <div
+                    wire:ignore
+                    data-ai-analysis-lottie-root
+                    data-ai-analysis-lottie-props="{{ $analysisLottiePayloadJson }}"
+                    class="mx-auto flex min-h-[280px] items-center justify-center"
+                ></div>
+
+                <p class="mt-2 text-sm font-semibold text-white/95 sm:text-base" x-text="currentAnalyzingLine"></p>
+            </div>
+        </div>
+    </section>
 
     @if(!$hasAnalysis)
         @if($isFailed)
@@ -117,51 +238,15 @@
                 <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Analysis failed</h2>
                 <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">The CV pipeline failed for this application. Retry analysis after verifying queue and OpenAI configuration.</p>
                 <div class="mt-6 flex justify-center">
-                    <button type="button" wire:click="runAnalysisNow" class="btn btn-primary">Retry Analysis</button>
+                    <button type="button" @click="triggerAnalysis('analysis')" class="btn btn-primary">Retry Analysis</button>
                 </div>
             </section>
         @else
-            <section class="card p-8 md:p-10">
-                <div class="grid gap-8 lg:grid-cols-2">
-                    <div>
-                        <h2 class="flex items-center gap-2 text-2xl font-bold text-gray-900 dark:text-white">
-                            <svg class="h-6 w-6 animate-spin text-brand-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
-                            </svg>
-                            AI analysis in progress
-                        </h2>
-                        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">We are parsing CV content, mapping role skills, and generating interview insights.</p>
-
-                        <div class="mt-6 space-y-3">
-                            <div class="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-white/5">
-                                <span class="h-2 w-2 animate-pulse rounded-full bg-brand-500"></span>
-                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">CV parsing and entity extraction</span>
-                            </div>
-                            <div class="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-white/5">
-                                <span class="h-2 w-2 animate-pulse rounded-full bg-brand-500"></span>
-                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Skill matching against job requirements</span>
-                            </div>
-                            <div class="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-white/5">
-                                <span class="h-2 w-2 animate-pulse rounded-full bg-brand-500"></span>
-                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Scoring and recommendation synthesis</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="flex flex-col justify-center rounded-2xl border border-brand-200 bg-brand-50 p-6 dark:border-brand-700/30 dark:bg-brand-500/10">
-                        <p class="text-xs font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-300">Pipeline Status</p>
-                        <p class="mt-2 text-lg font-semibold text-gray-900 dark:text-white">{{ ucfirst($cvStatus) }}</p>
-                        <div class="mt-5 h-2 w-full overflow-hidden rounded-full bg-white dark:bg-white/10">
-                            <div class="h-full w-2/3 animate-pulse rounded-full bg-brand-500"></div>
-                        </div>
-                        <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">{{ config('queue.default') === 'sync' ? 'Processing in local sync mode. Use Refresh Analysis after 20-40 seconds.' : 'Auto-refresh every 6 seconds.' }}</p>
-                        @if(config('queue.default') === 'sync')
-                            <div class="mt-3">
-                                <button type="button" wire:click="$refresh" class="btn btn-outline btn-sm">Check Status</button>
-                            </div>
-                        @endif
-                    </div>
+            <section class="card p-8 text-center">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">No analysis available yet</h2>
+                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Run AI analysis to generate role-fit scoring, strengths, gaps, and interview guidance.</p>
+                <div class="mt-6 flex justify-center">
+                    <button type="button" @click="triggerAnalysis('analysis')" class="btn btn-primary">Run Analysis Now</button>
                 </div>
             </section>
         @endif
@@ -176,7 +261,7 @@
             </div>
             <div class="card p-5 md:col-span-1">
                 <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Recommendation</p>
-                <p class="mt-2 text-2xl font-bold text-gray-900 dark:text-white">{{ strtoupper(str_replace('_', ' ', $analysis->recommendation ?? 'maybe')) }}</p>
+                <p class="mt-2 text-2xl font-bold text-gray-900 dark:text-white">{{ $recommendationLabel }}</p>
                 <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Based on skills, experience, and role alignment.</p>
             </div>
             <div class="card p-5 md:col-span-1">
@@ -300,5 +385,145 @@
     @endif
 </div>
 
+@once
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+    </style>
+@endonce
 
+@once
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('aiAnalysisFlow', (config) => ({
+                analysisModalOpen: config.analysisModalOpen,
+                isProcessingState: config.isProcessingState,
+                hasAnalysisState: config.hasAnalysisState,
+                isFailedState: config.isFailedState,
+                requestInFlight: false,
+                forceLoading: false,
+                openResultOnComplete: false,
+                currentPhaseIndex: 0,
+                phaseTimer: null,
+                analysisPhases: [
+                    'Analyzing candidate contact and identity details',
+                    'Analyzing location and social profile context',
+                    'Analyzing professional summary and bio',
+                    'Analyzing experience timeline and achievements',
+                    'Analyzing skill alignment with role requirements',
+                    'Analyzing education and certifications',
+                    'Computing role-fit score and recommendation',
+                    'Generating strengths, risks, and interview prompts',
+                ],
+                init() {
+                    if (this.isProcessingState) {
+                        this.forceLoading = true;
+                        this.startPhaseTicker();
+                    }
 
+                    this.$watch('isProcessingState', (value) => {
+                        if (value) {
+                            this.forceLoading = true;
+                            this.startPhaseTicker();
+                            return;
+                        }
+
+                        if (!this.requestInFlight) {
+                            this.finishLoading();
+                        }
+                    });
+
+                    this.$watch('hasAnalysisState', (value) => {
+                        if (value) {
+                            this.finishLoading();
+                            if (this.openResultOnComplete) {
+                                this.openModal();
+                                this.openResultOnComplete = false;
+                            }
+                        }
+                    });
+
+                    this.$watch('isFailedState', (value) => {
+                        if (value) {
+                            this.finishLoading();
+                            this.openResultOnComplete = false;
+                            this.closeModal();
+                        }
+                    });
+                },
+                get isLoadingUi() {
+                    return this.forceLoading || this.requestInFlight || this.isProcessingState;
+                },
+                get currentAnalyzingLine() {
+                    return this.analysisPhases[this.currentPhaseIndex] ?? this.analysisPhases[0];
+                },
+                openModal() {
+                    this.analysisModalOpen = true;
+                },
+                closeModal() {
+                    this.analysisModalOpen = false;
+                },
+                async triggerAnalysis(mode = 'analysis') {
+                    if (this.requestInFlight) {
+                        return;
+                    }
+
+                    this.closeModal();
+                    this.forceLoading = true;
+                    this.openResultOnComplete = true;
+                    this.currentPhaseIndex = 0;
+                    this.startPhaseTicker();
+                    this.requestInFlight = true;
+
+                    try {
+                        if (mode === 're-analysis') {
+                            await this.$wire.reanalyse();
+                        } else {
+                            await this.$wire.runAnalysisNow();
+                        }
+                    } catch (error) {
+                        this.forceLoading = false;
+                        this.openResultOnComplete = false;
+                        this.stopPhaseTicker();
+                    } finally {
+                        this.requestInFlight = false;
+
+                        if (!this.isProcessingState && !this.hasAnalysisState && !this.isFailedState) {
+                            this.forceLoading = false;
+                            this.openResultOnComplete = false;
+                            this.stopPhaseTicker();
+                        }
+                    }
+                },
+                startPhaseTicker() {
+                    if (this.phaseTimer) {
+                        return;
+                    }
+
+                    this.phaseTimer = window.setInterval(() => {
+                        if (!this.isLoadingUi) {
+                            this.stopPhaseTicker();
+                            return;
+                        }
+
+                        if (this.analysisPhases.length > 1) {
+                            this.currentPhaseIndex =
+                                (this.currentPhaseIndex + 1) % this.analysisPhases.length;
+                        }
+                    }, 1650);
+                },
+                stopPhaseTicker() {
+                    if (this.phaseTimer) {
+                        window.clearInterval(this.phaseTimer);
+                        this.phaseTimer = null;
+                    }
+                },
+                finishLoading() {
+                    this.forceLoading = false;
+                    this.stopPhaseTicker();
+                },
+            }));
+        });
+    </script>
+@endonce

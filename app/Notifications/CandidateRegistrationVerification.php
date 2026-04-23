@@ -3,13 +3,19 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\URL;
 
-class CandidateRegistrationVerification extends Notification
+class CandidateRegistrationVerification extends Notification implements ShouldQueue
 {
     use Queueable;
+
+    public function __construct()
+    {
+        $this->afterCommit();
+    }
 
     public function via($notifiable): array
     {

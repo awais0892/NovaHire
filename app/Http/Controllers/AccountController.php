@@ -6,6 +6,7 @@ use App\Models\Application;
 use App\Models\Candidate;
 use App\Models\DiscountVoucher;
 use App\Models\JobListing;
+use App\Services\CloudinaryImageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -30,7 +31,7 @@ class AccountController extends Controller
         ]);
     }
 
-    public function updateProfile(Request $request): RedirectResponse
+    public function updateProfile(Request $request, CloudinaryImageService $cloudinaryImageService): RedirectResponse
     {
         $user = auth()->user();
         $isCandidate = $user->hasRole('candidate');
@@ -43,14 +44,36 @@ class AccountController extends Controller
             'linkedin' => ['nullable', 'url', 'max:255'],
             'github' => ['nullable', 'url', 'max:255'],
             'portfolio' => ['nullable', 'url', 'max:255'],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,avif', 'max:2048'],
         ]);
+
+        $avatarUrl = null;
+        if ($request->hasFile('avatar')) {
+            try {
+                $avatarUrl = $cloudinaryImageService->uploadAvatar($request->file('avatar'), (int) $user->id);
+            } catch (\Throwable $exception) {
+                report($exception);
+
+                return back()
+                    ->withInput()
+                    ->withErrors([
+                        'avatar' => 'Profile photo upload failed. Please check Cloudinary settings and try again.',
+                    ]);
+            }
+        }
 
         $oldEmail = $user->email;
 
-        $user->update([
+        $userPayload = [
             'name' => $validated['name'],
             'email' => $validated['email'],
-        ]);
+        ];
+
+        if ($avatarUrl !== null) {
+            $userPayload['avatar'] = $avatarUrl;
+        }
+
+        $user->update($userPayload);
 
         if ($isCandidate) {
             $candidate = Candidate::where('user_id', $user->id)

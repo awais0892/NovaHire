@@ -33,8 +33,15 @@
             </div>
 
             <div x-data="{
-                init() {
-                    flatpickr(this.$refs.datepicker, {
+                async init() {
+                    const flatpickrLib = typeof window.ensureFlatpickr === 'function'
+                        ? await window.ensureFlatpickr()
+                        : window.flatpickr;
+                    if (typeof flatpickrLib !== 'function') {
+                        return;
+                    }
+
+                    flatpickrLib(this.$refs.datepicker, {
                         mode: 'range',
                         static: true,
                         monthSelectorType: 'static',

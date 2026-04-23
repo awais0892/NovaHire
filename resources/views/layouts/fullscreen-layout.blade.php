@@ -31,13 +31,10 @@
 </head>
 
 <body x-data="{}">
-
-    {{-- preloader --}}
-    <x-common.preloader />
-    {{-- preloader end --}}
-
     {{ $slot ?? '' }}
     @yield('content')
+
+    <x-common.scroll-to-top />
 
     @stack('scripts')
     @livewireScripts

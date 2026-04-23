@@ -147,7 +147,7 @@
                     <div class="relative z-10 flex h-full flex-col justify-between p-8 lg:p-10">
                         <div class="max-w-lg space-y-5">
                             <a href="{{ route('home') }}" class="inline-flex items-center gap-3 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-medium text-white/90 backdrop-blur-xl">
-                                <img src="/images/logo/novahire-icon.png" alt="NovaHire" class="h-6 w-6 rounded-lg object-cover">
+                                <img src="/images/logo/novahire-mark-light.svg" alt="NovaHire" class="h-6 w-6 rounded-lg object-cover">
                                 NovaHire
                             </a>
                             <div class="space-y-3">

@@ -24,25 +24,27 @@ use App\Http\Controllers\PublicPageController;
 use App\Http\Controllers\LocationAutocompleteController;
 use App\Http\Controllers\JobSearchSuggestionController;
 
-// Role-based root redirect
 Route::get('/', function () {
-    if (auth()->check()) {
-        $user = auth()->user();
-        if ($user->hasRole('super_admin'))
-            return redirect()->route('admin.dashboard');
-        if ($user->hasRole('hr_admin'))
-            return redirect()->route('recruiter.dashboard');
-        if ($user->hasRole('hr_standard'))
-            return redirect()->route('recruiter.applications');
-        if ($user->hasRole('hiring_manager'))
-            return redirect()->route('manager.dashboard');
-        if ($user->hasRole('candidate'))
-            return redirect()->route('candidate.dashboard');
-    }
     return app(LandingPageController::class)();
 })->name('home');
 
 Route::get('/dashboard', function () {
+    if (!auth()->check()) {
+        return redirect()->route('login');
+    }
+
+    $user = auth()->user();
+    if ($user->hasRole('super_admin'))
+        return redirect()->route('admin.dashboard');
+    if ($user->hasRole('hr_admin'))
+        return redirect()->route('recruiter.dashboard');
+    if ($user->hasRole('hr_standard'))
+        return redirect()->route('recruiter.applications');
+    if ($user->hasRole('hiring_manager'))
+        return redirect()->route('manager.dashboard');
+    if ($user->hasRole('candidate'))
+        return redirect()->route('candidate.dashboard');
+
     return redirect()->route('home');
 })->name('dashboard');
 
@@ -108,17 +110,17 @@ Route::get('/signup', function () {
     return redirect()->route('register');
 })->name('signup');
 
-// Guest auth routes (mount Livewire Register)
+// Guest auth routes
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:auth-login')->name('login.post');
     Route::get('/register/verify', [AuthController::class, 'showRegistrationVerificationNotice'])->name('register.verify.notice');
-    Route::post('/register/verify/resend', [AuthController::class, 'resendRegistrationVerification'])->name('register.verify.resend');
+    Route::post('/register/verify/resend', [AuthController::class, 'resendRegistrationVerification'])->middleware('throttle:auth-register-resend')->name('register.verify.resend');
     Route::get('/two-factor/challenge', [AuthController::class, 'showTwoFactorChallenge'])->name('auth.2fa.challenge.show');
     Route::post('/two-factor/challenge', [AuthController::class, 'verifyTwoFactorChallenge'])->name('auth.2fa.challenge.verify');
     Route::post('/two-factor/challenge/resend', [AuthController::class, 'resendTwoFactorChallenge'])->name('auth.2fa.challenge.resend');
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-    Route::post('/register', [AuthController::class, 'register'])->name('register.post');
+    Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:auth-register')->name('register.post');
     Route::get('/forgot-password', [AuthController::class, 'showForgotPasswordForm'])->name('password.request');
     Route::post('/forgot-password', [AuthController::class, 'sendPasswordResetLink'])->name('password.email');
     Route::get('/reset-password/{token}', [AuthController::class, 'showResetPasswordForm'])->name('password.reset');

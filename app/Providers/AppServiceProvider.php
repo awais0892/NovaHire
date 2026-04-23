@@ -48,5 +48,38 @@ class AppServiceProvider extends ServiceProvider
                 Limit::perHour(20)->by((string) $userId),
             ];
         });
+
+        RateLimiter::for('auth-login', function (Request $request) {
+            $email = strtolower(trim((string) $request->input('email', '')));
+            $key = $email !== '' ? $email . '|' . $request->ip() : $request->ip();
+
+            return [
+                Limit::perMinute(6)->by($key),
+                Limit::perHour(30)->by((string) $request->ip()),
+            ];
+        });
+
+        RateLimiter::for('auth-register', function (Request $request) {
+            $email = strtolower(trim((string) $request->input('email', '')));
+            $key = $email !== '' ? $email . '|' . $request->ip() : $request->ip();
+
+            return [
+                Limit::perMinute(4)->by($key),
+                Limit::perHour(12)->by((string) $request->ip()),
+            ];
+        });
+
+        RateLimiter::for('auth-register-resend', function (Request $request) {
+            $email = strtolower(trim((string) $request->input(
+                'email',
+                (string) $request->session()->get('auth.registration_verification_email', '')
+            )));
+            $key = $email !== '' ? $email . '|' . $request->ip() : $request->ip();
+
+            return [
+                Limit::perMinute(3)->by($key),
+                Limit::perHour(10)->by((string) $request->ip()),
+            ];
+        });
     }
 }

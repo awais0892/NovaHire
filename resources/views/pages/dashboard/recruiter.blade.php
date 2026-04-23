@@ -159,12 +159,17 @@
 
     @push('scripts')
         <script>
-            document.addEventListener('DOMContentLoaded', function () {
+            document.addEventListener('DOMContentLoaded', async function () {
                 const appsCtx = document.getElementById('appsOverTimeChart');
                 const scoreCtx = document.getElementById('scoreDistChart');
-                if (!appsCtx || !scoreCtx || typeof Chart === 'undefined') return;
+                if (!appsCtx || !scoreCtx) return;
 
-                new Chart(appsCtx, {
+                const ChartCtor = typeof window.ensureChartJs === 'function'
+                    ? await window.ensureChartJs()
+                    : window.Chart;
+                if (typeof ChartCtor !== 'function') return;
+
+                new ChartCtor(appsCtx, {
                     type: 'line',
                     data: {
                         labels: {!! json_encode($chart_data['labels']) !!},
@@ -190,7 +195,7 @@
                     }
                 });
 
-                new Chart(scoreCtx, {
+                new ChartCtor(scoreCtx, {
                     type: 'doughnut',
                     data: {
                         labels: {!! json_encode(array_keys($score_dist)) !!},

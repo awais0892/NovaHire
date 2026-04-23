@@ -16,6 +16,8 @@ class JobBoard extends Component
 
     private const ALLOWED_SORTS = ['published_at', 'salary_max', 'distance_km'];
     private const ALLOWED_RADII = ['10', '25', '50', '100'];
+    private const LOCATION_SESSION_KEY = 'jobs:location-context:v1';
+    private const LOCATION_SESSION_TTL_SECONDS = 86400;
 
     public string $search = '';
     public string $locationSearch = '';
@@ -51,6 +53,8 @@ class JobBoard extends Component
         if (auth()->user()?->hasRole('candidate') && request()->routeIs('jobs.index')) {
             $this->redirectRoute('candidate.jobs.index', navigate: true);
         }
+
+        $this->restoreLocationContextFromSession();
     }
 
     public function updatingSearch(): void
@@ -123,6 +127,7 @@ class JobBoard extends Component
         $this->sortBy = 'published_at';
         $this->selectedMapJobId = null;
         $this->locationFromBrowser = false;
+        $this->forgetLocationContextFromSession();
         $this->resetPage();
     }
 
@@ -147,6 +152,7 @@ class JobBoard extends Component
             $this->locationLatitude = (float) $latitude;
             $this->locationLongitude = (float) $longitude;
             $this->sortBy = 'distance_km';
+            $this->persistLocationContextInSession($this->locationSearch, false);
             $this->resetPage();
             return;
         }
@@ -166,6 +172,7 @@ class JobBoard extends Component
             $this->locationLatitude = $details['latitude'];
             $this->locationLongitude = $details['longitude'];
             $this->sortBy = 'distance_km';
+            $this->persistLocationContextInSession($this->locationSearch, false);
         }
 
         $this->resetPage();
@@ -187,6 +194,7 @@ class JobBoard extends Component
             $this->sortBy = 'published_at';
         }
 
+        $this->forgetLocationContextFromSession();
         $this->resetPage();
     }
 
@@ -204,6 +212,7 @@ class JobBoard extends Component
         $this->sortBy = 'distance_km';
         $this->selectedMapJobId = null;
         $this->locationFromBrowser = true;
+        $this->persistLocationContextInSession($label, true);
 
         $this->resetPage();
 
@@ -503,5 +512,69 @@ class JobBoard extends Component
                 ['name' => 'Jobs', 'url' => route($jobsIndexRoute)],
             ],
         ]);
+    }
+
+    private function restoreLocationContextFromSession(): void
+    {
+        $hasExplicitLocationContext = filled($this->locationSearch)
+            || filled($this->locationPlaceId)
+            || $this->locationLatitude !== null
+            || $this->locationLongitude !== null;
+
+        if ($hasExplicitLocationContext) {
+            return;
+        }
+
+        $cached = session(self::LOCATION_SESSION_KEY);
+        if (!is_array($cached)) {
+            return;
+        }
+
+        $timestamp = (int) ($cached['timestamp'] ?? 0);
+        if ($timestamp <= 0 || (time() - $timestamp) > self::LOCATION_SESSION_TTL_SECONDS) {
+            $this->forgetLocationContextFromSession();
+            return;
+        }
+
+        $latitude = $cached['latitude'] ?? null;
+        $longitude = $cached['longitude'] ?? null;
+        if (!is_numeric($latitude) || !is_numeric($longitude)) {
+            $this->forgetLocationContextFromSession();
+            return;
+        }
+
+        $this->locationLatitude = (float) $latitude;
+        $this->locationLongitude = (float) $longitude;
+        $this->locationSearch = (string) ($cached['label'] ?? '');
+        if ($this->locationSearch === '') {
+            $this->locationSearch = sprintf('Current location (%.4f, %.4f)', $this->locationLatitude, $this->locationLongitude);
+        }
+        $this->locationPlaceId = (string) ($cached['place_id'] ?? '');
+        $this->locationFromBrowser = (bool) ($cached['from_browser'] ?? false);
+
+        if (!request()->has('sortBy') && $this->sortBy === 'published_at') {
+            $this->sortBy = 'distance_km';
+        }
+    }
+
+    private function persistLocationContextInSession(string $label, bool $fromBrowser): void
+    {
+        if ($this->locationLatitude === null || $this->locationLongitude === null) {
+            return;
+        }
+
+        session()->put(self::LOCATION_SESSION_KEY, [
+            'label' => trim($label),
+            'place_id' => $this->locationPlaceId,
+            'latitude' => $this->locationLatitude,
+            'longitude' => $this->locationLongitude,
+            'from_browser' => $fromBrowser,
+            'timestamp' => time(),
+        ]);
+    }
+
+    private function forgetLocationContextFromSession(): void
+    {
+        session()->forget(self::LOCATION_SESSION_KEY);
     }
 }

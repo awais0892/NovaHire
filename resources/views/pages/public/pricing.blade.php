@@ -131,165 +131,176 @@
     @endphp
 
     <section class="space-y-10" id="pricing-page" data-pricing-widget>
-        <div class="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1.1fr)]">
-            <div class="space-y-6">
-                <div class="flex flex-col gap-3">
-                    <span class="inline-flex w-fit items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-500 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-300">
-                        Pricing
-                    </span>
-                    <h1 class="text-4xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
-                        Plans that scale with your hiring
-                    </h1>
-                    <p class="max-w-2xl text-base text-slate-600 dark:text-slate-300">
-                        Whether you’re hiring your first teammate or running a global talent pipeline, NovaHire keeps pricing
-                        predictable while giving you enterprise-grade AI tools from day one.
-                    </p>
-                </div>
+        <header class="space-y-6">
+            <div class="flex flex-col gap-3">
+                <span class="inline-flex w-fit items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-500 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-300">
+                    Pricing
+                </span>
+                <h1 class="text-4xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
+                    Plans that scale with your hiring
+                </h1>
+                <p class="max-w-2xl text-base text-slate-600 dark:text-slate-300">
+                    Whether you’re hiring your first teammate or running a global talent pipeline, NovaHire keeps pricing
+                    predictable while giving you enterprise-grade AI tools from day one.
+                </p>
+            </div>
 
-                <div class="flex flex-wrap items-center gap-4 rounded-2xl border border-slate-200 bg-white/80 p-4 text-sm shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/70">
-                    <div class="pricing-billing-switch inline-flex items-center rounded-full border border-slate-200 bg-white/90 p-1 text-xs font-medium shadow-sm dark:border-slate-700 dark:bg-slate-950/60" data-pricing-switch>
-                        <span class="pricing-billing-switch-indicator" data-pricing-switch-indicator aria-hidden="true"></span>
-                        <button
-                            type="button"
-                            data-pricing-billing="monthly"
-                            aria-pressed="true"
-                            class="pricing-billing-button is-active rounded-full px-4 py-2 font-semibold">
-                            Monthly
-                        </button>
-                        <button
-                            type="button"
-                            data-pricing-billing="annual"
-                            aria-pressed="false"
-                            class="pricing-billing-button rounded-full px-4 py-2 font-semibold transition">
-                            <span class="flex items-center gap-1.5">
-                                Annual
-                                <span class="pricing-billing-chip">(Save 20%)</span>
-                            </span>
-                        </button>
+            <div class="flex flex-wrap items-center gap-4 rounded-2xl border border-slate-200 bg-white/80 p-4 text-sm shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/70">
+                <div class="pricing-billing-switch inline-flex items-center rounded-full border border-slate-200 bg-white/90 p-1 text-xs font-medium shadow-sm dark:border-slate-700 dark:bg-slate-950/60" data-pricing-switch>
+                    <span class="pricing-billing-switch-indicator" data-pricing-switch-indicator aria-hidden="true"></span>
+                    <button
+                        type="button"
+                        data-pricing-billing="monthly"
+                        aria-pressed="true"
+                        class="pricing-billing-button is-active rounded-full px-4 py-2 font-semibold">
+                        Monthly
+                    </button>
+                    <button
+                        type="button"
+                        data-pricing-billing="annual"
+                        aria-pressed="false"
+                        class="pricing-billing-button rounded-full px-4 py-2 font-semibold transition">
+                        <span class="flex items-center gap-1.5">
+                            Annual
+                            <span class="pricing-billing-chip">(Save 20%)</span>
+                        </span>
+                    </button>
+                </div>
+                <dl class="flex flex-wrap gap-4 text-xs text-slate-500 dark:text-slate-300">
+                    <div class="flex items-center gap-2">
+                        <dt class="inline-flex h-2 w-2 rounded-full bg-emerald-400"></dt>
+                        <dd>No setup fees</dd>
                     </div>
-                    <dl class="flex flex-wrap gap-4 text-xs text-slate-500 dark:text-slate-300">
-                        <div class="flex items-center gap-2">
-                            <dt class="inline-flex h-2 w-2 rounded-full bg-emerald-400"></dt>
-                            <dd>No setup fees</dd>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <dt class="inline-flex h-2 w-2 rounded-full bg-emerald-400"></dt>
-                            <dd>Cancel anytime</dd>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <dt class="inline-flex h-2 w-2 rounded-full bg-emerald-400"></dt>
-                            <dd>Usage-based, fair billing</dd>
-                        </div>
-                    </dl>
-                </div>
+                    <div class="flex items-center gap-2">
+                        <dt class="inline-flex h-2 w-2 rounded-full bg-emerald-400"></dt>
+                        <dd>Cancel anytime</dd>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <dt class="inline-flex h-2 w-2 rounded-full bg-emerald-400"></dt>
+                        <dd>Usage-based, fair billing</dd>
+                    </div>
+                </dl>
+            </div>
+        </header>
 
-                <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
-                    @foreach($plans as $index => $plan)
-                        @php
-                            $isHighlight = (bool) data_get($plan, 'highlight');
-                            $name = (string) data_get($plan, 'name');
-                            $monthly = (float) data_get($plan, 'monthly');
-                            $annual = (float) data_get($plan, 'annual');
-                            $period = (string) data_get($plan, 'period');
-                            $isFree = (bool) data_get($plan, 'is_free');
-                            $description = (string) data_get($plan, 'description');
-                            $trialDays = (int) data_get($plan, 'trial_days', 0);
-                            $stackClass = $isHighlight ? 'md:scale-[1.02]' : '';
-                        @endphp
+        <div class="space-y-10">
+            <div class="grid grid-cols-1 gap-5 md:grid-cols-3 md:auto-rows-fr">
+                @foreach($plans as $index => $plan)
+                    @php
+                        $isHighlight = (bool) data_get($plan, 'highlight');
+                        $name = (string) data_get($plan, 'name');
+                        $monthly = (float) data_get($plan, 'monthly');
+                        $annual = (float) data_get($plan, 'annual');
+                        $period = (string) data_get($plan, 'period');
+                        $isFree = (bool) data_get($plan, 'is_free');
+                        $description = (string) data_get($plan, 'description');
+                        $trialDays = (int) data_get($plan, 'trial_days', 0);
+                        $stackClass = $isHighlight ? 'md:scale-[1.02]' : '';
+                    @endphp
 
-                        <article
-                            data-plan-card
-                            data-plan-key="{{ data_get($plan, 'key') }}"
-                            class="relative flex flex-col rounded-2xl border border-slate-200 bg-white/95 p-6 text-left shadow-sm ring-1 ring-transparent transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:ring-brand-500/40 dark:border-slate-700 dark:bg-slate-900/80 {{ $stackClass }}">
-                            @if($isHighlight)
-                                <div class="absolute right-4 top-4 inline-flex items-center rounded-full bg-brand-600/95 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-white shadow-sm">
-                                    <i data-lucide="star" class="mr-1 h-3 w-3 fill-current"></i>
-                                    Recommended
-                                </div>
-                            @endif
+                    <article
+                        data-plan-card
+                        data-plan-key="{{ data_get($plan, 'key') }}"
+                        class="relative flex h-full flex-col rounded-2xl border border-slate-200 bg-white/95 p-6 text-left shadow-sm ring-1 ring-transparent transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:ring-brand-500/40 focus-within:ring-brand-500/40 dark:border-slate-700 dark:bg-slate-900/80 {{ $stackClass }}">
+                        @if($isHighlight)
+                            <div class="absolute right-4 top-4 inline-flex items-center whitespace-nowrap rounded-full bg-brand-600/95 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-white shadow-sm z-10">
+                                <i data-lucide="star" class="mr-1 h-3 w-3 fill-current"></i>
+                                Most popular
+                            </div>
+                        @endif
 
-                            <div class="flex flex-1 flex-col">
-                                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
-                                    {{ $isFree ? 'For early-stage teams' : 'For scaling hiring pipelines' }}
-                                </p>
-                                <h2 class="mt-1 text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-                                    {{ $name }}
-                                </h2>
-                                <p class="mt-1 text-sm text-slate-500 dark:text-slate-300">
-                                    {{ $description }}
-                                </p>
+                        <div class="flex flex-1 flex-col pt-8">
+                            <p class="pr-24 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
+                                {{ $isFree ? 'For early-stage teams' : 'For scaling hiring pipelines' }}
+                            </p>
+                            <h2 class="mt-1 text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+                                {{ $name }}
+                            </h2>
+                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-300">
+                                {{ $description }}
+                            </p>
 
-                                <div class="mt-5 flex items-baseline gap-2">
-                                    <span class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white md:text-4xl">
-                                        <span
-                                            data-pricing-amount
-                                            data-monthly="{{ $monthly }}"
-                                            data-annual="{{ $annual }}">
-                                            ${{ number_format($monthly, 0) }}
-                                        </span>
+                            <div class="mt-5 flex items-baseline gap-2">
+                                <span class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white md:text-4xl">
+                                    <span
+                                        data-pricing-amount
+                                        data-monthly="{{ $monthly }}"
+                                        data-annual="{{ $annual }}">
+                                        ${{ number_format($monthly, 0) }}
                                     </span>
-                                    <span class="text-sm font-medium text-slate-500 dark:text-slate-300">
+                                </span>
+                                <span class="flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-300">
+                                    <span data-pricing-period data-monthly="month" data-annual="year">
                                         / {{ $period }}
                                     </span>
-                                </div>
-
-                                <p class="mt-1 text-xs font-medium uppercase tracking-wide text-emerald-600 dark:text-emerald-300" data-pricing-billed>
-                                    billed monthly — annual billing applies automatic savings
-                                </p>
-
-                                @if($trialDays > 0 && !$isFree)
-                                    <p class="mt-2 text-xs font-semibold text-emerald-600 dark:text-emerald-300">
-                                        {{ $trialDays }}-day free trial on monthly billing. Explore every feature before you commit.
-                                    </p>
-                                @endif
-
-                                <ul class="mt-5 flex flex-1 flex-col gap-2">
-                                    @foreach((array) data_get($plan, 'features', []) as $feature)
-                                        <li class="flex items-start gap-2">
-                                            <span class="mt-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300">
-                                                <i data-lucide="check" class="h-3 w-3"></i>
-                                            </span>
-                                            <span class="text-sm text-slate-700 dark:text-slate-200">{{ $feature }}</span>
-                                        </li>
-                                    @endforeach
-                                </ul>
-
-                                <div class="mt-6">
-                                    @auth
-                                        @if(auth()->user()?->company)
-                                            <form method="POST" action="{{ route('billing.checkout') }}" class="space-y-2">
-                                                @csrf
-                                                <input type="hidden" name="plan" value="{{ data_get($plan, 'key') }}">
-                                                <input type="hidden" name="billing_cycle" value="monthly" data-billing-cycle-input>
-                                                <input
-                                                    name="voucher_code"
-                                                    class="h-9 w-full rounded-lg border border-slate-300 bg-white px-2 text-xs dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-                                                    placeholder="Voucher code (optional)">
-                                                <button
-                                                    class="inline-flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold tracking-tight transition {{ $isHighlight ? 'bg-brand-600 text-white hover:bg-brand-500' : 'border border-slate-300 bg-white text-slate-900 hover:border-brand-400 hover:bg-brand-50 dark:border-slate-600 dark:bg-slate-950/40 dark:text-white dark:hover:border-brand-400 dark:hover:bg-slate-900' }}">
-                                                    {{ $isFree ? 'Activate Basic (Free)' : data_get($plan, 'cta') }}
-                                                </button>
-                                            </form>
-                                        @else
-                                            <a
-                                                href="{{ route('dashboard') }}"
-                                                class="inline-flex w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold tracking-tight text-slate-900 transition hover:border-brand-400 hover:bg-brand-50 dark:border-slate-600 dark:bg-slate-950/40 dark:text-white dark:hover:border-brand-400 dark:hover:bg-slate-900">
-                                                Open dashboard
-                                            </a>
-                                        @endif
-                                    @else
-                                        @php($ctaHref = data_get($plan, 'key') === 'enterprise' ? route('public.contact') : route('register'))
-                                        <a
-                                            href="{{ $ctaHref }}"
-                                            class="inline-flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold tracking-tight transition {{ $isHighlight ? 'bg-brand-600 text-white hover:bg-brand-500' : 'border border-slate-300 bg-white text-slate-900 hover:border-brand-400 hover:bg-brand-50 dark:border-slate-600 dark:bg-slate-950/40 dark:text-white dark:hover:border-brand-400 dark:hover:bg-slate-900' }}">
-                                            {{ data_get($plan, 'cta') }}
-                                        </a>
-                                    @endauth
-                                </div>
+                                    <span
+                                        data-pricing-save-badge
+                                        class="hidden rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200">
+                                        Save 20%
+                                    </span>
+                                </span>
                             </div>
-                        </article>
-                    @endforeach
-                </div>
+
+                            <p class="mt-1 text-xs font-medium uppercase tracking-wide text-emerald-600 dark:text-emerald-300" data-pricing-billed>
+                                billed monthly — annual billing applies automatic savings
+                            </p>
+
+                            <p class="mt-1 hidden text-xs font-medium text-slate-500 dark:text-slate-300" data-pricing-equivalent>
+                                ≈ $0/mo when billed annually
+                            </p>
+
+                            @if($trialDays > 0 && !$isFree)
+                                <p class="mt-2 text-xs font-semibold text-emerald-600 dark:text-emerald-300">
+                                    {{ $trialDays }}-day free trial on monthly billing. Explore every feature before you commit.
+                                </p>
+                            @endif
+
+                            <ul class="mt-5 flex flex-1 flex-col gap-2">
+                                @foreach((array) data_get($plan, 'features', []) as $feature)
+                                    <li class="flex items-start gap-2">
+                                        <span class="mt-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300">
+                                            <i data-lucide="check" class="h-3 w-3"></i>
+                                        </span>
+                                        <span class="text-sm text-slate-700 dark:text-slate-200">{{ $feature }}</span>
+                                    </li>
+                                @endforeach
+                            </ul>
+
+                            <div class="mt-6">
+                                @auth
+                                    @if(auth()->user()?->company)
+                                        <form method="POST" action="{{ route('billing.checkout') }}" class="space-y-2">
+                                            @csrf
+                                            <input type="hidden" name="plan" value="{{ data_get($plan, 'key') }}">
+                                            <input type="hidden" name="billing_cycle" value="monthly" data-billing-cycle-input>
+                                            <input
+                                                name="voucher_code"
+                                                class="h-9 w-full rounded-lg border border-slate-300 bg-white px-2 text-xs dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                                                placeholder="Voucher code (optional)">
+                                            <button
+                                                class="inline-flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold tracking-tight transition {{ $isHighlight ? 'bg-brand-600 text-white hover:bg-brand-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-950' : 'border border-slate-300 bg-white text-slate-900 hover:border-brand-400 hover:bg-brand-50 dark:border-slate-600 dark:bg-slate-950/40 dark:text-white dark:hover:border-brand-400 dark:hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-950' }}">
+                                                {{ $isFree ? 'Activate Basic (Free)' : data_get($plan, 'cta') }}
+                                            </button>
+                                        </form>
+                                    @else
+                                        <a
+                                            href="{{ route('dashboard') }}"
+                                            class="inline-flex w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold tracking-tight text-slate-900 transition hover:border-brand-400 hover:bg-brand-50 dark:border-slate-600 dark:bg-slate-950/40 dark:text-white dark:hover:border-brand-400 dark:hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-950">
+                                            Open dashboard
+                                        </a>
+                                    @endif
+                                @else
+                                    @php($ctaHref = data_get($plan, 'key') === 'enterprise' ? route('public.contact') : route('register'))
+                                    <a
+                                        href="{{ $ctaHref }}"
+                                        class="inline-flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold tracking-tight transition {{ $isHighlight ? 'bg-brand-600 text-white hover:bg-brand-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-950' : 'border border-slate-300 bg-white text-slate-900 hover:border-brand-400 hover:bg-brand-50 dark:border-slate-600 dark:bg-slate-950/40 dark:text-white dark:hover:border-brand-400 dark:hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-950' }}">
+                                        {{ data_get($plan, 'cta') }}
+                                    </a>
+                                @endauth
+                            </div>
+                        </div>
+                    </article>
+                @endforeach
             </div>
 
             <aside class="space-y-6 rounded-3xl border border-slate-200 bg-white/90 p-6 text-sm shadow-sm dark:border-slate-800 dark:bg-slate-900/80">

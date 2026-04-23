@@ -59,6 +59,21 @@ return [
         'timeout_seconds' => (int) env('GOOGLE_CALENDAR_TIMEOUT', 10),
     ],
 
+    'cloudinary' => [
+        'cloud_name' => env(
+            'CLOUDINARY_CLOUD_NAME',
+            env('CLOUD_NAME', env('CLOUDINARY_CLOUD', env('CLOUDINARY_NAME', env('CLD_CLOUD_NAME'))))
+        ),
+        'api_key' => env('CLOUDINARY_API_KEY', env('CLOUD_API_KEY', env('CLOUDINARY_KEY', env('CLD_API_KEY')))),
+        'api_secret' => env(
+            'CLOUDINARY_API_SECRET',
+            env('CLOUD_API_SECRET', env('CLOUDINARY_SECRET', env('CLD_API_SECRET')))
+        ),
+        'url' => env('CLOUDINARY_URL'),
+        'folder' => env('CLOUDINARY_FOLDER', 'novahire'),
+        'timeout' => (int) env('CLOUDINARY_TIMEOUT', 15),
+    ],
+
     'maps' => [
         'provider' => env('MAPS_PROVIDER', 'geoapify'),
         'timeout' => (int) env('MAPS_HTTP_TIMEOUT', 5),

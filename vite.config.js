@@ -6,8 +6,31 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
     build: {
-        minify: false,
+        minify: 'esbuild',
         target: 'es2020',
+        // ApexCharts is intentionally lazy-loaded and lands in a dedicated vendor chunk.
+        chunkSizeWarningLimit: 700,
+        rollupOptions: {
+            output: {
+                manualChunks(id) {
+                    if (!id.includes('node_modules')) {
+                        return;
+                    }
+
+                    if (id.includes('node_modules/apexcharts/')) {
+                        return 'vendor-apexcharts';
+                    }
+
+                    if (id.includes('node_modules/leaflet/')) {
+                        return 'vendor-leaflet';
+                    }
+
+                    if (id.includes('node_modules/@fullcalendar/')) {
+                        return 'vendor-fullcalendar';
+                    }
+                },
+            },
+        },
     },
     resolve: {
         alias: {
@@ -17,7 +40,7 @@ export default defineConfig({
     plugins: [
         react(),
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.js'],
+            input: ['resources/css/app.css', 'resources/js/app.js', 'resources/js/public.js'],
             refresh: true,
         }),
         tailwindcss(),

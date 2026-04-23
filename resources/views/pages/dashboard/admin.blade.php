@@ -199,8 +199,16 @@
 
     @push('scripts')
         <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                new Chart(document.getElementById('companyGrowthChart'), {
+            document.addEventListener('DOMContentLoaded', async function () {
+                const chartEl = document.getElementById('companyGrowthChart');
+                if (!chartEl) return;
+
+                const ChartCtor = typeof window.ensureChartJs === 'function'
+                    ? await window.ensureChartJs()
+                    : window.Chart;
+                if (typeof ChartCtor !== 'function') return;
+
+                new ChartCtor(chartEl, {
                     type: 'bar',
                     data: {
                         labels: {!! json_encode($growth_labels) !!},

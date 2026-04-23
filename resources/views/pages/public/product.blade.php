@@ -57,7 +57,7 @@
         $featureGroups = collect($featureExplorer ?? [])->values();
         $firstMedia = $gallery->first();
         $firstFeatureGroup = $featureGroups->first();
-        $videoPoster = data_get($gallery->firstWhere('type', 'image'), 'src', asset('images/large-vecteezy_ai-generated-a-silhouette-of-a-person-standing-on-top-of-a_40247032_large.jpg'));
+        $videoPoster = data_get($gallery->firstWhere('type', 'image'), 'src', asset('images/optimized/vecteezy-silhouette-1600.webp'));
         $initialGalleryImage = ($firstMedia['type'] ?? 'image') === 'image' ? data_get($firstMedia, 'src') : $videoPoster;
 
         $productFaqs = [
@@ -158,7 +158,7 @@
                 </div>
 
                 <div data-loaded="0" class="hero-media-frame relative overflow-hidden rounded-2xl border border-white/30 bg-slate-950/90 p-4 shadow-2xl dark:border-slate-700/80">
-                    <img src="{{ asset('images/large-vecteezy_ai-generated-a-silhouette-of-a-person-standing-on-top-of-a_40247032_large.jpg') }}" alt="AI Applicant Tracking System dashboard mood visual" class="hero-media-image h-72 w-full rounded-xl object-cover opacity-0 transition-opacity duration-700" data-hero-image fetchpriority="high" decoding="async" width="1280" height="800">
+                    <img src="{{ asset('images/optimized/vecteezy-silhouette-1600.webp') }}" alt="AI Applicant Tracking System dashboard mood visual" class="hero-media-image h-72 w-full rounded-xl object-cover opacity-0 transition-opacity duration-700" data-hero-image fetchpriority="high" decoding="async" width="1280" height="800">
                     <div class="absolute inset-0 z-[2] bg-gradient-to-t from-slate-950 via-slate-950/15 to-transparent"></div>
                     <div class="absolute bottom-4 left-4 right-4 z-[3] rounded-xl border border-white/15 bg-white/10 p-4 backdrop-blur">
                         <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">Live platform snapshot</p>
@@ -169,7 +169,7 @@
             </div>
         </header>
 
-        <div class="product-section-divider grid gap-6 lg:grid-cols-[1.2fr_0.8fr]" data-gallery-root>
+        <div class="product-section-divider cv-auto grid gap-6 lg:grid-cols-[1.2fr_0.8fr]" data-gallery-root>
             <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60" aria-labelledby="product-media-heading">
                 <div class="flex items-center justify-between gap-3">
                     <div>
@@ -237,7 +237,7 @@
             </section>
         </div>
 
-        <section class="product-section-divider rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60" data-feature-explorer aria-labelledby="feature-explorer-heading">
+        <section class="product-section-divider cv-auto rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60" data-feature-explorer aria-labelledby="feature-explorer-heading">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600 dark:text-brand-300">Feature Explorer</p>
@@ -270,7 +270,7 @@
             <script type="application/json" data-feature-json>@json($featureGroups)</script>
         </section>
 
-        <section class="product-section-divider rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60" data-workflow aria-labelledby="workflow-heading">
+        <section class="product-section-divider cv-auto rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60" data-workflow aria-labelledby="workflow-heading">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600 dark:text-brand-300">Workflow Navigator</p>
@@ -295,7 +295,7 @@
             <script type="application/json" data-workflow-json>@json($workflowRows)</script>
         </section>
 
-        <section class="product-section-divider" aria-labelledby="capabilities-heading">
+        <section class="product-section-divider cv-auto" aria-labelledby="capabilities-heading">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600 dark:text-brand-300">Core Capabilities</p>
@@ -312,7 +312,7 @@
             </div>
         </section>
 
-        <div class="product-section-divider grid gap-6 lg:grid-cols-2">
+        <div class="product-section-divider cv-auto grid gap-6 lg:grid-cols-2">
             <section class="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900/60" aria-labelledby="roles-heading">
                 <h2 id="roles-heading" class="text-2xl font-bold text-slate-900 dark:text-white">Built for every hiring role</h2>
                 <div class="mt-5 space-y-4">
@@ -349,7 +349,7 @@
             </section>
         </div>
 
-        <section class="product-section-divider rounded-3xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900/60" aria-labelledby="active-jobs-heading">
+        <section class="product-section-divider cv-auto rounded-3xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900/60" aria-labelledby="active-jobs-heading">
             <div class="flex flex-wrap items-end justify-between gap-4">
                 <div>
                     <h2 id="active-jobs-heading" class="text-2xl font-bold text-slate-900 dark:text-white">Active opportunities in your Hiring Lifecycle</h2>
@@ -371,7 +371,7 @@
             </div>
         </section>
 
-        <section class="product-section-divider rounded-3xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900/60" data-product-faq aria-labelledby="product-faq-heading">
+        <section class="product-section-divider cv-auto rounded-3xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900/60" data-product-faq aria-labelledby="product-faq-heading">
             <p class="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600 dark:text-brand-300">Buyer FAQ</p>
             <h2 id="product-faq-heading" class="mt-2 text-2xl font-bold text-slate-900 dark:text-white">Frequently asked questions about this AI Applicant Tracking System</h2>
             <p class="mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-300">Answers to common adoption, integration, and governance questions before rollout.</p>
@@ -393,7 +393,7 @@
             </div>
         </section>
 
-        <section class="product-section-divider rounded-3xl border border-brand-200 bg-gradient-to-r from-brand-50 via-cyan-50 to-emerald-50 p-8 shadow-sm dark:border-brand-700/50 dark:from-brand-500/10 dark:via-cyan-500/10 dark:to-emerald-500/10" aria-labelledby="final-cta-heading">
+        <section class="product-section-divider cv-auto rounded-3xl border border-brand-200 bg-gradient-to-r from-brand-50 via-cyan-50 to-emerald-50 p-8 shadow-sm dark:border-brand-700/50 dark:from-brand-500/10 dark:via-cyan-500/10 dark:to-emerald-500/10" aria-labelledby="final-cta-heading">
             <h2 id="final-cta-heading" class="text-2xl font-bold text-slate-900 dark:text-white">Launch smarter hiring workflows</h2>
             <p class="mt-2 text-slate-700 dark:text-slate-300">Start with your current process, then scale with role-based collaboration, AI screening, and interview automation.</p>
             <div class="mt-6 flex flex-wrap gap-3">

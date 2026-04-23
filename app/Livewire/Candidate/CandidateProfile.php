@@ -3,6 +3,7 @@
 namespace App\Livewire\Candidate;
 
 use App\Models\Candidate;
+use App\Services\CloudinaryImageService;
 use App\Services\ResumeParserService;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -18,6 +19,8 @@ class CandidateProfile extends Component
     public string $linkedin = '';
     public string $github = '';
     public string $portfolio = '';
+    public $newAvatar;
+    public string $avatarUrl = '';
     public $newCv;
     public bool $saved = false;
     public bool $cvUploaded = false;
@@ -46,6 +49,7 @@ class CandidateProfile extends Component
             'linkedin' => 'nullable|url|max:200',
             'github' => 'nullable|url|max:200',
             'portfolio' => 'nullable|url|max:200',
+            'newAvatar' => 'nullable|image|mimes:jpg,jpeg,png,webp,avif|max:2048',
             'newCv' => "nullable|file|mimes:pdf|mimetypes:application/pdf,application/x-pdf,application/octet-stream|max:{$this->maxCvUploadKb}",
             'twoFactorEnabled' => 'boolean',
         ];
@@ -58,6 +62,8 @@ class CandidateProfile extends Component
         return [
             'newCv.uploaded' => "Upload failed before validation. Please upload a smaller PDF (up to {$maxMb}MB).",
             'newCv.max' => "The CV must be {$maxMb}MB or smaller.",
+            'newAvatar.uploaded' => 'Profile image upload failed before validation. Please choose a smaller image and try again.',
+            'newAvatar.max' => 'The profile image must be 2MB or smaller.',
         ];
     }
 
@@ -82,7 +88,14 @@ class CandidateProfile extends Component
         $this->linkedin = $candidate?->linkedin ?? '';
         $this->github = $candidate?->github ?? '';
         $this->portfolio = $candidate?->portfolio ?? '';
+        $this->avatarUrl = (string) ($user->avatar_url ?? '');
         $this->twoFactorEnabled = (bool) ($user->two_factor_enabled ?? false);
+    }
+
+    public function updatedNewAvatar(): void
+    {
+        $this->resetErrorBag('newAvatar');
+        $this->validateOnly('newAvatar');
     }
 
     public function updatedNewCv(): void
@@ -102,10 +115,33 @@ class CandidateProfile extends Component
 
         // Update user name
         $user = auth()->user();
-        $user->update([
+        $avatarUrl = null;
+        if ($this->newAvatar) {
+            try {
+                $avatarUrl = app(CloudinaryImageService::class)->uploadAvatar($this->newAvatar, (int) $user->id);
+            } catch (\Throwable $exception) {
+                report($exception);
+                $this->addError('newAvatar', 'Profile photo upload failed. Please check Cloudinary settings and try again.');
+                return;
+            }
+        }
+
+        $userPayload = [
             'name' => $this->name,
             'two_factor_enabled' => $this->twoFactorEnabled,
-        ]);
+        ];
+
+        if ($avatarUrl !== null) {
+            $userPayload['avatar'] = $avatarUrl;
+        }
+
+        $user->update($userPayload);
+
+        if ($avatarUrl !== null) {
+            $this->avatarUrl = $avatarUrl;
+            $this->newAvatar = null;
+            $this->dispatch('profile-avatar-updated', url: $avatarUrl);
+        }
 
         try {
             $candidate = $this->upsertCandidateProfile($user);

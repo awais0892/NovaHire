@@ -29,15 +29,18 @@
 
                     <div class="mt-7 grid gap-3 sm:grid-cols-3">
                         <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/60">
-                            <p class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-300">Companies</p>
+                            <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-brand-200 bg-brand-50 text-base dark:border-brand-500/40 dark:bg-brand-500/15">🏢</span>
+                            <p class="mt-2 text-xs uppercase tracking-wide text-slate-500 dark:text-slate-300">Companies</p>
                             <p class="mt-1 text-2xl font-bold text-slate-900 dark:text-white">{{ number_format($platformMetrics['companies'] ?? 0) }}</p>
                         </div>
                         <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/60">
-                            <p class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-300">Candidates</p>
+                            <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-brand-200 bg-brand-50 text-base dark:border-brand-500/40 dark:bg-brand-500/15">🧑‍💼</span>
+                            <p class="mt-2 text-xs uppercase tracking-wide text-slate-500 dark:text-slate-300">Candidates</p>
                             <p class="mt-1 text-2xl font-bold text-slate-900 dark:text-white">{{ number_format($platformMetrics['candidates'] ?? 0) }}</p>
                         </div>
                         <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/60">
-                            <p class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-300">Applications</p>
+                            <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-brand-200 bg-brand-50 text-base dark:border-brand-500/40 dark:bg-brand-500/15">📬</span>
+                            <p class="mt-2 text-xs uppercase tracking-wide text-slate-500 dark:text-slate-300">Applications</p>
                             <p class="mt-1 text-2xl font-bold text-slate-900 dark:text-white">{{ number_format($platformMetrics['applications'] ?? 0) }}</p>
                         </div>
                     </div>
@@ -45,7 +48,7 @@
 
                 <div class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-900">
                     <img
-                        src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1400&q=75"
+                        src="{{ asset('images/optimized/vecteezy-businessman-1600.webp') }}"
                         alt="Professional team reviewing hiring analytics"
                         class="h-full w-full object-cover"
                         width="1400"
@@ -57,7 +60,7 @@
             </div>
         </div>
 
-        <div class="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+        <div class="cv-auto grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
             <section class="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
                 <p class="text-xs font-semibold uppercase tracking-[0.2em] text-brand-700 dark:text-brand-300">What We Solve</p>
                 <h2 class="mt-3 text-3xl font-bold text-slate-900 dark:text-white">Recruiting complexity should not be your operating model.</h2>
@@ -68,36 +71,28 @@
                 </p>
                 <div class="mt-6 grid gap-4 sm:grid-cols-2">
                     <article class="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/60">
-                        <div class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-brand-50 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">
-                            <i data-lucide="brain-circuit" class="h-5 w-5"></i>
-                        </div>
+                        <x-ui.hiring-motion-icon src="/animations/roles/recruiter-role.mp4" poster="/animations/roles/recruiter-role.png" label="Structured AI screening animation" position="52% 42%" :zoom="1.08" playback-rate="1" class="h-12 w-12 rounded-xl" />
                         <h3 class="mt-3 text-lg font-semibold text-slate-900 dark:text-white">Structured AI Screening</h3>
                         <p class="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">
                             Extract skills, evaluate fit, and prioritize candidates with consistent criteria.
                         </p>
                     </article>
                     <article class="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/60">
-                        <div class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">
-                            <i data-lucide="workflow" class="h-5 w-5"></i>
-                        </div>
+                        <x-ui.hiring-motion-icon src="/animations/roles/manager-role.mp4" poster="/animations/roles/manager-role.png" label="Role based workflow animation" position="50% 40%" :zoom="1.08" playback-rate="0.98" class="h-12 w-12 rounded-xl" />
                         <h3 class="mt-3 text-lg font-semibold text-slate-900 dark:text-white">Role-Based Workflow</h3>
                         <p class="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">
                             Recruiters, managers, and admins get interfaces aligned to their decisions.
                         </p>
                     </article>
                     <article class="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/60">
-                        <div class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-sky-50 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300">
-                            <i data-lucide="calendar-check-2" class="h-5 w-5"></i>
-                        </div>
+                        <x-ui.hiring-motion-icon src="/animations/roles/hiring-manager-role.mp4" poster="/animations/roles/hiring-manager-role.png" label="Interview orchestration animation" position="52% 45%" :zoom="1.08" playback-rate="0.96" class="h-12 w-12 rounded-xl" />
                         <h3 class="mt-3 text-lg font-semibold text-slate-900 dark:text-white">Interview Orchestration</h3>
                         <p class="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">
                             Coordinate schedules, reminders, and candidate responses without workflow drift.
                         </p>
                     </article>
                     <article class="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/60">
-                        <div class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-violet-50 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300">
-                            <i data-lucide="bar-chart-3" class="h-5 w-5"></i>
-                        </div>
+                        <x-ui.hiring-motion-icon src="/animations/roles/candidate-role.mp4" poster="/animations/roles/candidate-role.png" label="Recruitment analytics animation" position="50% 47%" :zoom="1.08" playback-rate="1.02" class="h-12 w-12 rounded-xl" />
                         <h3 class="mt-3 text-lg font-semibold text-slate-900 dark:text-white">Recruitment Analytics</h3>
                         <p class="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">
                             Track throughput, conversion, and hiring quality with live operational metrics.
@@ -111,25 +106,25 @@
                 <h2 class="mt-3 text-3xl font-bold text-slate-900 dark:text-white">Principles behind the platform.</h2>
                 <div class="mt-6 space-y-4">
                     <article class="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
-                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Operational Clarity</h3>
+                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">🧭 Operational Clarity</h3>
                         <p class="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">Every stage has clear ownership and visible status, reducing ambiguity across hiring teams.</p>
                     </article>
                     <article class="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
-                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Human Accountable Decisions</h3>
+                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">👥 Human Accountable Decisions</h3>
                         <p class="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">AI supports evaluations with structured insight, while final decisions remain with people.</p>
                     </article>
                     <article class="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
-                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Built for Scale</h3>
+                        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">📈 Built for Scale</h3>
                         <p class="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">From growing teams to enterprise hiring operations, workflows stay consistent and auditable.</p>
                     </article>
                 </div>
             </section>
         </div>
 
-        <div class="grid gap-6 lg:grid-cols-3">
+        <div class="cv-auto grid gap-6 lg:grid-cols-3">
             <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
                 <img
-                    src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&q=72"
+                    src="{{ asset('images/optimized/vecteezy-silhouette-1600.webp') }}"
                     alt="Hiring managers collaborating at a workstation"
                     class="h-52 w-full object-cover"
                     width="1200"
@@ -143,7 +138,7 @@
             </article>
             <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
                 <img
-                    src="https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1200&q=72"
+                    src="{{ asset('images/optimized/vecteezy-golden-chess-1600.webp') }}"
                     alt="Professional recruitment strategy meeting"
                     class="h-52 w-full object-cover"
                     width="1200"
@@ -157,7 +152,7 @@
             </article>
             <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
                 <img
-                    src="https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1200&q=72"
+                    src="{{ asset('images/optimized/vecteezy-jump-silhouette-1600.webp') }}"
                     alt="Data-informed hiring operations dashboard planning"
                     class="h-52 w-full object-cover"
                     width="1200"
@@ -171,7 +166,7 @@
             </article>
         </div>
 
-        <div class="rounded-3xl border border-brand-200 bg-gradient-to-r from-brand-50/80 to-cyan-50/70 p-8 dark:border-brand-700/50 dark:from-brand-500/10 dark:to-cyan-500/10">
+        <div class="cv-auto rounded-3xl border border-brand-200 bg-gradient-to-r from-brand-50/80 to-cyan-50/70 p-8 dark:border-brand-700/50 dark:from-brand-500/10 dark:to-cyan-500/10">
             <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Build a hiring process your team can trust.</h2>
             <p class="mt-2 max-w-3xl text-slate-700 dark:text-slate-300">
                 NovaHire combines candidate experience, recruiter efficiency, and hiring manager decision quality in one integrated platform.

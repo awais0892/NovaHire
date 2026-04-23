@@ -1,20 +1,42 @@
-<div class="relative" x-data="{
-    dropdownOpen: false,
-    toggleDropdown() {
-        this.dropdownOpen = !this.dropdownOpen;
-    },
-    closeDropdown() {
-        this.dropdownOpen = false;
-    }
-}" @click.away="closeDropdown()">
+@php
+    $authUser = Auth::user();
+    $avatarUrl = $authUser?->avatar_url;
+    $userInitial = strtoupper(substr($authUser?->name ?? 'U', 0, 1));
+@endphp
+
+<div
+    class="relative"
+    x-data="{
+        dropdownOpen: false,
+        avatarUrl: @js($avatarUrl),
+        toggleDropdown() {
+            this.dropdownOpen = !this.dropdownOpen;
+        },
+        closeDropdown() {
+            this.dropdownOpen = false;
+        }
+    }"
+    @click.away="closeDropdown()"
+    @profile-avatar-updated.window="if ($event.detail && $event.detail.url) { avatarUrl = $event.detail.url }"
+>
+
     <!-- User Button -->
     <button class="flex items-center text-gray-700 dark:text-gray-400" @click.prevent="toggleDropdown()" type="button">
-        <span
-            class="mr-3 overflow-hidden rounded-full h-11 w-11 bg-brand-100 flex items-center justify-center text-brand-600 font-semibold border-2 border-white dark:border-gray-900 dark:bg-gray-800 dark:text-brand-400">
-            {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 1)) }}
-        </span>
+        <template x-if="avatarUrl">
+            <img
+                :src="avatarUrl"
+                alt="{{ $authUser?->name ?? 'User' }}"
+                class="mr-3 h-11 w-11 rounded-full border-2 border-white object-cover dark:border-gray-900"
+            />
+        </template>
+        <template x-if="!avatarUrl">
+            <span
+                class="mr-3 overflow-hidden rounded-full h-11 w-11 bg-brand-100 flex items-center justify-center text-brand-600 font-semibold border-2 border-white dark:border-gray-900 dark:bg-gray-800 dark:text-brand-400">
+                {{ $userInitial }}
+            </span>
+        </template>
 
-        <span class="block mr-1 font-medium text-theme-sm">{{ Auth::user()->name ?? 'Guest' }}</span>
+        <span class="block mr-1 font-medium text-theme-sm">{{ $authUser?->name ?? 'Guest' }}</span>
 
         <!-- Chevron Icon -->
         <svg class="w-5 h-5 transition-transform duration-200" :class="{ 'rotate-180': dropdownOpen }" fill="none"
@@ -33,19 +55,19 @@
         <!-- User Info -->
         <div>
             <span
-                class="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">{{ Auth::user()->name ?? 'Guest' }}</span>
+                class="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">{{ $authUser?->name ?? 'Guest' }}</span>
             <span
-                class="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">{{ Auth::user()->email ?? '' }}</span>
+                class="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">{{ $authUser?->email ?? '' }}</span>
             <span
-                class="mt-1 block text-[10px] uppercase font-bold text-brand-500">{{ Auth::user() && Auth::user()->roles->count() > 0 ? str_replace('_', ' ', Auth::user()->roles->first()->name) : 'User' }}</span>
+                class="mt-1 block text-[10px] uppercase font-bold text-brand-500">{{ $authUser && $authUser->roles->count() > 0 ? str_replace('_', ' ', $authUser->roles->first()->name) : 'User' }}</span>
         </div>
 
         <!-- Menu Items -->
         <ul class="flex flex-col gap-1 pt-4 pb-3 border-b border-gray-200 dark:border-gray-800">
             @php
-                $profilePath = auth()->user()?->hasRole('candidate') ? route('candidate.profile') : route('profile');
+                $profilePath = $authUser?->hasRole('candidate') ? route('candidate.profile') : route('profile');
                 $settingsPath = route('account.settings');
-                $supportPath = auth()->user()?->hasRole('candidate') ? route('candidate.chat') : route('dashboard');
+                $supportPath = $authUser?->hasRole('candidate') ? route('candidate.chat') : route('dashboard');
 
                 $menuItems = [
                     [

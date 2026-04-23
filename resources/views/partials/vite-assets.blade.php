@@ -4,20 +4,29 @@
         ? json_decode(file_get_contents($manifestPath), true)
         : null;
 
-    $cssEntry = is_array($manifest) ? ($manifest['resources/css/app.css'] ?? null) : null;
-    $jsEntry = is_array($manifest) ? ($manifest['resources/js/app.js'] ?? null) : null;
+    $cssEntryKey = $cssEntry ?? 'resources/css/app.css';
+    $jsEntryKey = $jsEntry ?? 'resources/js/app.js';
+
+    $cssManifestEntry = is_array($manifest) ? ($manifest[$cssEntryKey] ?? null) : null;
+    $jsManifestEntry = is_array($manifest) ? ($manifest[$jsEntryKey] ?? null) : null;
+
+    $styleFiles = [];
+    if (is_array($cssManifestEntry) && !empty($cssManifestEntry['file'])) {
+        $styleFiles[] = asset('build/' . $cssManifestEntry['file']);
+    }
+    if (is_array($jsManifestEntry) && !empty($jsManifestEntry['css'])) {
+        foreach ($jsManifestEntry['css'] as $cssFile) {
+            $styleFiles[] = asset('build/' . $cssFile);
+        }
+    }
+
+    $styleFiles = array_values(array_unique(array_filter($styleFiles)));
 @endphp
 
-@if (is_array($cssEntry) && !empty($cssEntry['file']))
-    <link rel="stylesheet" href="{{ asset('build/' . $cssEntry['file']) }}" data-navigate-track="reload" />
-@endif
+@foreach ($styleFiles as $styleFile)
+    <link rel="stylesheet" href="{{ $styleFile }}" data-navigate-track="reload" />
+@endforeach
 
-@if (is_array($jsEntry) && !empty($jsEntry['css']))
-    @foreach ($jsEntry['css'] as $cssFile)
-        <link rel="stylesheet" href="{{ asset('build/' . $cssFile) }}" data-navigate-track="reload" />
-    @endforeach
-@endif
-
-@if (is_array($jsEntry) && !empty($jsEntry['file']))
-    <script type="module" src="{{ asset('build/' . $jsEntry['file']) }}" data-navigate-track="reload"></script>
+@if (is_array($jsManifestEntry) && !empty($jsManifestEntry['file']))
+    <script type="module" src="{{ asset('build/' . $jsManifestEntry['file']) }}" data-navigate-track="reload"></script>
 @endif

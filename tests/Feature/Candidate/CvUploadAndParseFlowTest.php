@@ -7,6 +7,7 @@ use App\Models\Candidate;
 use App\Models\Company;
 use App\Models\JobListing;
 use App\Models\User;
+use App\Services\CloudinaryImageService;
 use App\Services\ResumeParserService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -151,6 +152,27 @@ test('candidate profile shows parsing error when uploaded pdf cannot be parsed',
     $candidate = Candidate::where('user_id', $data['candidateUser']->id)->first();
     expect($candidate)->not->toBeNull();
     expect($candidate?->cv_status)->toBe('failed');
+});
+
+test('candidate profile save uploads avatar to cloudinary', function () {
+    $data = candidateUserWithCompany();
+    $this->actingAs($data['candidateUser']);
+
+    $cloudinary = Mockery::mock(CloudinaryImageService::class);
+    $cloudinary->shouldReceive('uploadAvatar')
+        ->once()
+        ->andReturn('https://res.cloudinary.com/demo/image/upload/v1710000000/novahire/avatars/' . $data['candidateUser']->id . '/candidate.png');
+    $this->app->instance(CloudinaryImageService::class, $cloudinary);
+
+    Livewire::test(CandidateProfile::class)
+        ->set('newAvatar', UploadedFile::fake()->image('candidate.png', 320, 320))
+        ->call('save')
+        ->assertHasNoErrors()
+        ->assertSet('saved', true)
+        ->assertSet('avatarUrl', 'https://res.cloudinary.com/demo/image/upload/v1710000000/novahire/avatars/' . $data['candidateUser']->id . '/candidate.png');
+
+    expect($data['candidateUser']->fresh()->avatar)
+        ->toBe('https://res.cloudinary.com/demo/image/upload/v1710000000/novahire/avatars/' . $data['candidateUser']->id . '/candidate.png');
 });
 
 test('candidate cv upload flow creates application and queues analysis path safely', function () {

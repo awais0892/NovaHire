@@ -19,10 +19,43 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('profile.update') }}"
+        @php
+            $avatarUrl = $user->avatar_url;
+            $userInitial = strtoupper(substr($user->name ?? 'U', 0, 1));
+        @endphp
+
+        <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data"
             class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03] space-y-5">
             @csrf
             @method('PUT')
+
+            <div class="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
+                <label class="mb-3 block text-sm font-medium text-gray-700 dark:text-gray-300">Profile Photo</label>
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
+                    @if($avatarUrl)
+                        <img
+                            src="{{ $avatarUrl }}"
+                            alt="{{ $user->name }}"
+                            class="h-20 w-20 rounded-full border border-gray-200 object-cover dark:border-gray-700"
+                        />
+                    @else
+                        <div class="flex h-20 w-20 items-center justify-center rounded-full border border-gray-200 bg-brand-100 text-2xl font-semibold text-brand-600 dark:border-gray-700 dark:bg-gray-800 dark:text-brand-400">
+                            {{ $userInitial }}
+                        </div>
+                    @endif
+
+                    <div class="flex-1">
+                        <input
+                            type="file"
+                            name="avatar"
+                            accept=".jpg,.jpeg,.png,.webp,.avif,image/jpeg,image/png,image/webp,image/avif"
+                            class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm dark:border-gray-700 dark:text-white"
+                        />
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">JPG, PNG, WEBP, or AVIF. Maximum size: 2MB.</p>
+                        @error('avatar') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                    </div>
+                </div>
+            </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
@@ -78,4 +111,3 @@
         </form>
     </div>
 @endsection
-

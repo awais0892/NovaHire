@@ -36,6 +36,7 @@ test('health endpoint returns ok payload', function () {
 test('register page is candidate only', function () {
     $this->get(route('register'))
         ->assertOk()
+        ->assertSee('Candidate account only')
         ->assertSee('Secure onboarding')
         ->assertSee('name="name"', false)
         ->assertSee('name="password_confirmation"', false)
@@ -112,6 +113,16 @@ test('candidate verification link verifies account and signs in', function () {
 
     expect($user->fresh()->hasVerifiedEmail())->toBeTrue();
     $this->assertAuthenticatedAs($user->fresh());
+});
+
+test('verification resend stays generic for unknown email addresses', function () {
+    $response = $this->post(route('register.verify.resend'), [
+        'email' => 'missing@example.com',
+    ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHas('status');
+    $response->assertSessionDoesntHaveErrors();
 });
 
 test('super admin login redirects to admin dashboard', function () {

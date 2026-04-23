@@ -122,16 +122,21 @@
 
 @push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', async function () {
         const usageEl = document.getElementById('adminAiUsageChart');
         const recoEl = document.getElementById('adminAiRecoChart');
-        if (!usageEl || !recoEl || typeof Chart === 'undefined') return;
+        if (!usageEl || !recoEl) return;
+
+        const ChartCtor = typeof window.ensureChartJs === 'function'
+            ? await window.ensureChartJs()
+            : window.Chart;
+        if (typeof ChartCtor !== 'function') return;
 
         const usageLabels = {!! json_encode($dailyUsage->pluck('date')->values()) !!};
         const usageTokens = {!! json_encode($dailyUsage->pluck('tokens')->map(fn($v) => (int) $v)->values()) !!};
         const usageRuns = {!! json_encode($dailyUsage->pluck('runs')->map(fn($v) => (int) $v)->values()) !!};
 
-        new Chart(usageEl, {
+        new ChartCtor(usageEl, {
             data: {
                 labels: usageLabels,
                 datasets: [
@@ -185,7 +190,7 @@
         const recoLabels = {!! json_encode($recommendationBreakdown->pluck('recommendation')->map(fn($v) => str_replace('_', ' ', $v ?: 'unknown'))->values()) !!};
         const recoData = {!! json_encode($recommendationBreakdown->pluck('count')->map(fn($v) => (int) $v)->values()) !!};
 
-        new Chart(recoEl, {
+        new ChartCtor(recoEl, {
             type: 'doughnut',
             data: {
                 labels: recoLabels,

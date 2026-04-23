@@ -6,18 +6,41 @@ const DEFAULT_ZOOM = 5;
 const DEFAULT_START_ZOOM = 4;
 const MIN_ZOOM = 3;
 const MAX_ZOOM = 17;
-const FOCUS_DURATION_SECONDS = 1.2;
-const CINEMATIC_DURATION_SECONDS = 2.8;
+const FOCUS_DURATION_SECONDS = 0.78;
+const WIDE_SHIFT_DURATION_SECONDS = 0.98;
+const CINEMATIC_DURATION_SECONDS = 1.35;
+const MEDIUM_SHIFT_DISTANCE_KM = 700;
+const LARGE_SHIFT_DISTANCE_KM = 1800;
 
-const TILE_CONFIG = {
-    light: {
-        url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-    },
-    dark: {
-        url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-    },
+const TILE_PROVIDERS = {
+    light: [
+        {
+            id: 'carto-light',
+            url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+            attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+            maxZoom: 20,
+        },
+        {
+            id: 'osm',
+            url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            attribution: '&copy; OpenStreetMap contributors',
+            maxZoom: 19,
+        },
+    ],
+    dark: [
+        {
+            id: 'carto-dark',
+            url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+            attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+            maxZoom: 20,
+        },
+        {
+            id: 'osm',
+            url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            attribution: '&copy; OpenStreetMap contributors',
+            maxZoom: 19,
+        },
+    ],
 };
 
 const mapInstances = new Map();
@@ -55,8 +78,12 @@ function isDarkMode() {
     return document.documentElement.classList.contains('dark');
 }
 
-function resolveTileConfig() {
-    return isDarkMode() ? TILE_CONFIG.dark : TILE_CONFIG.light;
+function resolveThemeKey() {
+    return isDarkMode() ? 'dark' : 'light';
+}
+
+function resolveTileProviders(themeKey = resolveThemeKey()) {
+    return TILE_PROVIDERS[themeKey] || TILE_PROVIDERS.light;
 }
 
 function decodeBase64Json(encodedValue) {
@@ -92,6 +119,12 @@ function clearDetachedMaps() {
             continue;
         }
 
+        if (typeof instance.clearLoadingFallbackTimer === 'function') {
+            instance.clearLoadingFallbackTimer();
+        }
+        if (typeof instance.clearRuntimeTimers === 'function') {
+            instance.clearRuntimeTimers();
+        }
         instance.attributeObserver.disconnect();
         instance.map.remove();
         mapInstances.delete(element);
@@ -109,15 +142,10 @@ function ensureThemeObserver() {
     }
 
     themeObserver = new MutationObserver(() => {
+        const themeKey = resolveThemeKey();
+
         for (const instance of mapInstances.values()) {
-            const tileConfig = resolveTileConfig();
-
-            if (instance.tileUrl === tileConfig.url) {
-                continue;
-            }
-
-            instance.tileUrl = tileConfig.url;
-            instance.tileLayer.setUrl(tileConfig.url);
+            instance.applyTheme(themeKey);
         }
     });
 
@@ -128,7 +156,9 @@ function ensureThemeObserver() {
 }
 
 function createMapInstance(element) {
-    const tileConfig = resolveTileConfig();
+    const initialTheme = resolveThemeKey();
+    const initialProviders = resolveTileProviders(initialTheme);
+    const initialProvider = initialProviders[0];
 
     const map = L.map(element, {
         zoomControl: true,
@@ -142,15 +172,193 @@ function createMapInstance(element) {
         worldCopyJump: true,
     });
 
-    const tileLayer = L.tileLayer(tileConfig.url, {
-        attribution: tileConfig.attribution,
-        maxZoom: 20,
-        detectRetina: true,
-    });
-
-    tileLayer.addTo(map);
-
     const markerLayer = L.layerGroup().addTo(map);
+    let tileLayer = null;
+    let loadingFallbackTimerId = 0;
+    let tileLoadSettledTimerId = 0;
+    let isLoading = false;
+    let didReceiveTileSuccess = false;
+    let tileErrorBurstCount = 0;
+    let activeTheme = initialTheme;
+    let activeProviders = initialProviders;
+    let activeProviderIndex = 0;
+    let instance = null;
+
+    const clearLoadingFallbackTimer = () => {
+        if (!loadingFallbackTimerId) {
+            return;
+        }
+
+        window.clearTimeout(loadingFallbackTimerId);
+        loadingFallbackTimerId = 0;
+    };
+
+    const clearTileLoadSettledTimer = () => {
+        if (!tileLoadSettledTimerId) {
+            return;
+        }
+
+        window.clearTimeout(tileLoadSettledTimerId);
+        tileLoadSettledTimerId = 0;
+    };
+
+    const clearRuntimeTimers = () => {
+        clearLoadingFallbackTimer();
+        clearTileLoadSettledTimer();
+    };
+
+    const setLoadingState = (isLoading) => {
+        const loading = Boolean(isLoading);
+        element.classList.toggle('map-is-loading', loading);
+        element.dataset.mapLoading = loading ? 'true' : 'false';
+    };
+
+    const clearLoading = () => {
+        clearRuntimeTimers();
+        isLoading = false;
+        setLoadingState(false);
+    };
+
+    const scheduleLoadingFailover = () => {
+        clearLoadingFallbackTimer();
+        loadingFallbackTimerId = window.setTimeout(() => {
+            if (!isLoading) {
+                return;
+            }
+
+            if (!didReceiveTileSuccess && instance?.switchToNextTileProvider('timeout')) {
+                return;
+            }
+
+            clearLoading();
+        }, 5200);
+    };
+
+    const markLoading = () => {
+        if (!isLoading) {
+            didReceiveTileSuccess = false;
+            tileErrorBurstCount = 0;
+        }
+
+        isLoading = true;
+        setLoadingState(true);
+        scheduleLoadingFailover();
+    };
+
+    const createTileLayer = (provider) => {
+        if (!provider) {
+            return null;
+        }
+
+        return L.tileLayer(provider.url, {
+            attribution: provider.attribution,
+            maxZoom: provider.maxZoom ?? 20,
+            detectRetina: true,
+            keepBuffer: 6,
+            updateWhenIdle: true,
+            updateWhenZooming: false,
+        });
+    };
+
+    const handleTileLoad = () => {
+        didReceiveTileSuccess = true;
+        tileErrorBurstCount = 0;
+        clearTileLoadSettledTimer();
+        tileLoadSettledTimerId = window.setTimeout(() => {
+            clearLoading();
+        }, 140);
+    };
+
+    const handleTileError = () => {
+        tileErrorBurstCount += 1;
+        const failoverThreshold = didReceiveTileSuccess ? 12 : 6;
+
+        if (tileErrorBurstCount >= failoverThreshold && instance?.switchToNextTileProvider('tile-error')) {
+            tileErrorBurstCount = 0;
+            return;
+        }
+
+        scheduleLoadingFailover();
+    };
+
+    const bindTileEvents = (layer) => {
+        if (!layer) {
+            return;
+        }
+
+        layer.on('loading', markLoading);
+        layer.on('tileloadstart', markLoading);
+        layer.on('tileload', handleTileLoad);
+        layer.on('load', clearLoading);
+        layer.on('tileerror', handleTileError);
+    };
+
+    const unbindTileEvents = (layer) => {
+        if (!layer) {
+            return;
+        }
+
+        layer.off('loading', markLoading);
+        layer.off('tileloadstart', markLoading);
+        layer.off('tileload', handleTileLoad);
+        layer.off('load', clearLoading);
+        layer.off('tileerror', handleTileError);
+    };
+
+    const setTileProvider = (themeKey = activeTheme, providerIndex = 0) => {
+        const providers = resolveTileProviders(themeKey);
+        if (!providers.length) {
+            return false;
+        }
+
+        const safeProviderIndex = Math.max(0, Math.min(providers.length - 1, providerIndex));
+        const provider = providers[safeProviderIndex];
+
+        if (
+            tileLayer &&
+            activeTheme === themeKey &&
+            activeProviderIndex === safeProviderIndex
+        ) {
+            return false;
+        }
+
+        markLoading();
+
+        const nextTileLayer = createTileLayer(provider);
+        bindTileEvents(nextTileLayer);
+
+        if (tileLayer) {
+            unbindTileEvents(tileLayer);
+            tileLayer.remove();
+        }
+
+        tileLayer = nextTileLayer;
+        tileLayer.addTo(map);
+
+        activeTheme = themeKey;
+        activeProviders = providers;
+        activeProviderIndex = safeProviderIndex;
+        tileErrorBurstCount = 0;
+        didReceiveTileSuccess = false;
+
+        element.dataset.mapTileTheme = activeTheme;
+        element.dataset.mapTileProvider = provider.id || '';
+
+        if (instance) {
+            instance.tileLayer = tileLayer;
+            instance.tileUrl = provider.url;
+            instance.tileProviderId = provider.id || '';
+            instance.activeTheme = activeTheme;
+        }
+
+        return true;
+    };
+
+    setTileProvider(initialTheme, 0);
+
+    map.on('moveend zoomend', () => {
+        window.setTimeout(clearLoading, 220);
+    });
 
     map.setView(DEFAULT_CENTER, DEFAULT_ZOOM, {
         animate: false,
@@ -169,13 +377,32 @@ function createMapInstance(element) {
         attributeFilter: ['data-map-config'],
     });
 
-    const instance = {
+    instance = {
         map,
         tileLayer,
-        tileUrl: tileConfig.url,
+        tileUrl: initialProvider?.url || '',
+        tileProviderId: initialProvider?.id || '',
         markerLayer,
         attributeObserver,
         lastConfigHash: '',
+        activeTheme,
+        setTileProvider,
+        applyTheme: (themeKey = resolveThemeKey()) => setTileProvider(themeKey, 0),
+        syncTheme: (themeKey = resolveThemeKey()) => (
+            themeKey !== activeTheme ? setTileProvider(themeKey, 0) : false
+        ),
+        switchToNextTileProvider: () => {
+            const nextProviderIndex = activeProviderIndex + 1;
+            if (nextProviderIndex >= activeProviders.length) {
+                return false;
+            }
+
+            return setTileProvider(activeTheme, nextProviderIndex);
+        },
+        markLoading,
+        clearLoading,
+        clearLoadingFallbackTimer,
+        clearRuntimeTimers,
     };
 
     mapInstances.set(element, instance);
@@ -185,6 +412,7 @@ function createMapInstance(element) {
         map.invalidateSize({
             pan: false,
         });
+        clearLoading();
     }, 0);
 
     return instance;
@@ -248,6 +476,12 @@ function hasMeaningfulShift(map, center, zoom) {
     return latDiff > 0.0005 || lngDiff > 0.0005 || currentZoom !== zoom;
 }
 
+function centerShiftDistanceKm(map, center) {
+    const currentCenter = map.getCenter();
+    const targetCenter = L.latLng(center[0], center[1]);
+    return map.distance(currentCenter, targetCenter) / 1000;
+}
+
 function applyMapConfig(instance, config) {
     const configHash = JSON.stringify(config || {});
     if (instance.lastConfigHash === configHash) {
@@ -255,11 +489,7 @@ function applyMapConfig(instance, config) {
     }
     instance.lastConfigHash = configHash;
 
-    const tileConfig = resolveTileConfig();
-    if (instance.tileUrl !== tileConfig.url) {
-        instance.tileUrl = tileConfig.url;
-        instance.tileLayer.setUrl(tileConfig.url);
-    }
+    instance.syncTheme(resolveThemeKey());
 
     const markers = Array.isArray(config?.markers) ? config.markers : [];
     instance.markerLayer.clearLayers();
@@ -277,19 +507,18 @@ function applyMapConfig(instance, config) {
         cinematicKey &&
         cinematicKey !== lastCinematicKey;
 
+    instance.markLoading();
+    instance.map.invalidateSize({ pan: false });
+
     if (shouldRunCinematic) {
         instance.map.stop();
-        instance.map.setView(DEFAULT_CENTER, startZoom, {
-            animate: false,
-        });
-
-        window.requestAnimationFrame(() => {
-            instance.map.flyTo(center, zoom, {
-                animate: true,
-                duration: CINEMATIC_DURATION_SECONDS,
-                easeLinearity: 0.18,
-                noMoveStart: true,
-            });
+        const cinematicStartZoom = clampZoom(startZoom, Math.min(zoom, 8));
+        instance.map.setView(center, cinematicStartZoom, { animate: false });
+        instance.map.flyTo(center, zoom, {
+            animate: true,
+            duration: CINEMATIC_DURATION_SECONDS,
+            easeLinearity: 0.26,
+            noMoveStart: true,
         });
 
         lastCinematicKey = cinematicKey;
@@ -309,11 +538,34 @@ function applyMapConfig(instance, config) {
         }
     }
 
+    const shiftDistanceKm = centerShiftDistanceKm(instance.map, center);
+    const zoomDelta = Math.abs(instance.map.getZoom() - zoom);
+
+    if (shiftDistanceKm >= LARGE_SHIFT_DISTANCE_KM || zoomDelta >= 6) {
+        const stagingZoom = clampZoom(Math.min(zoom, 9), DEFAULT_ZOOM);
+        instance.map.setView(center, stagingZoom, { animate: false });
+
+        if (stagingZoom !== zoom) {
+            instance.map.flyTo(center, zoom, {
+                animate: true,
+                duration: 0.9,
+                easeLinearity: 0.28,
+                noMoveStart: true,
+            });
+        }
+
+        return;
+    }
+
+    const transitionDuration = shiftDistanceKm >= MEDIUM_SHIFT_DISTANCE_KM
+        ? WIDE_SHIFT_DURATION_SECONDS
+        : FOCUS_DURATION_SECONDS;
+
     if (hasMeaningfulShift(instance.map, center, zoom)) {
         instance.map.flyTo(center, zoom, {
             animate: true,
-            duration: FOCUS_DURATION_SECONDS,
-            easeLinearity: 0.25,
+            duration: transitionDuration,
+            easeLinearity: 0.28,
             noMoveStart: true,
         });
         return;

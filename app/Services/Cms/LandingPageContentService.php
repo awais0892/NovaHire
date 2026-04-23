@@ -14,6 +14,10 @@ class LandingPageContentService
 
     private const HOME_CONTENT_CACHE_KEY = 'cms:home-content:merged';
 
+    private const LEGACY_HEAVY_HERO_VIDEO_FILE = 'vecteezy_tech-abstract-green-screen-transition-4k-hd-video_22653032.mp4';
+
+    private const OPTIMIZED_HERO_VIDEO_PATH = '/animations/roles/recruiter-role.mp4';
+
     public function getHomePage(bool $createIfMissing = false): ?CmsPage
     {
         if ($createIfMissing) {
@@ -60,7 +64,9 @@ class LandingPageContentService
                     $defaults = LandingPageDefaults::data();
                     $stored = $this->getHomePage();
 
-                    return array_replace_recursive($defaults, (array) ($stored?->content ?? []));
+                    $mergedContent = array_replace_recursive($defaults, (array) ($stored?->content ?? []));
+
+                    return $this->normalizeMediaPaths($mergedContent);
                 }
             );
         } catch (Throwable $exception) {
@@ -108,7 +114,7 @@ class LandingPageContentService
                 'secondary_cta_text' => (string) data_get($content, 'hero.secondary_cta_text', ''),
                 'secondary_cta_url' => (string) data_get($content, 'hero.secondary_cta_url', ''),
                 'image' => (string) data_get($content, 'hero.image', ''),
-                'video' => (string) data_get($content, 'hero.video', ''),
+                'video' => $this->normalizeHeroVideoPath((string) data_get($content, 'hero.video', '')),
             ],
             'stats' => collect((array) data_get($content, 'stats', []))
                 ->map(fn (array $row) => [
@@ -206,7 +212,7 @@ class LandingPageContentService
                 'secondary_cta_text' => trim((string) $validated['hero_secondary_cta_text']),
                 'secondary_cta_url' => trim((string) $validated['hero_secondary_cta_url']),
                 'image' => trim((string) $validated['hero_image']),
-                'video' => trim((string) ($validated['hero_video'] ?? '')),
+                'video' => $this->normalizeHeroVideoPath(trim((string) ($validated['hero_video'] ?? ''))),
             ],
             'stats' => $stats,
             'features' => $features,
@@ -214,5 +220,30 @@ class LandingPageContentService
             'plans' => $plans,
             'logos' => $logos,
         ];
+    }
+
+    private function normalizeMediaPaths(array $content): array
+    {
+        data_set(
+            $content,
+            'hero.video',
+            $this->normalizeHeroVideoPath((string) data_get($content, 'hero.video', ''))
+        );
+
+        return $content;
+    }
+
+    private function normalizeHeroVideoPath(string $videoPath): string
+    {
+        $normalizedPath = trim($videoPath);
+        if ($normalizedPath === '') {
+            return '';
+        }
+
+        if (str_contains($normalizedPath, self::LEGACY_HEAVY_HERO_VIDEO_FILE)) {
+            return self::OPTIMIZED_HERO_VIDEO_PATH;
+        }
+
+        return $normalizedPath;
     }
 }

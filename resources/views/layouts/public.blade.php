@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     @php
@@ -8,7 +8,7 @@
         }
         $metaTitle = ($title ?? 'NovaHire') . ' | NovaHire';
         $metaDesc = $metaDescription ?? 'NovaHire AI recruitment platform for modern hiring teams.';
-        $metaImg = $metaImage ?? asset('images/logo/novahire-icon.png');
+        $metaImg = $metaImage ?? asset('images/logo/novahire-wordmark.svg');
     @endphp
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -29,7 +29,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    @include('partials.vite-assets')
+    @include('partials.vite-assets', ['jsEntry' => 'resources/js/public.js'])
     @livewireStyles
     @stack('head')
     <style>
@@ -65,24 +65,15 @@
                     </ol>
                 </nav>
             @endif
+
             {{ $slot ?? '' }}
             @yield('content')
-
-            <section class="mt-12 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900/60">
-                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">Explore</p>
-                <div class="mt-3 flex flex-wrap gap-2 text-sm">
-                    <a href="{{ route('public.product') }}" class="rounded-lg border border-slate-300 px-3 py-1.5 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">Product</a>
-                    <a href="{{ route('public.features') }}" class="rounded-lg border border-slate-300 px-3 py-1.5 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">Features</a>
-                    <a href="{{ route('public.pricing') }}" class="rounded-lg border border-slate-300 px-3 py-1.5 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">Pricing</a>
-                    <a href="{{ route('public.about') }}" class="rounded-lg border border-slate-300 px-3 py-1.5 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">About</a>
-                    <a href="{{ route('public.faq') }}" class="rounded-lg border border-slate-300 px-3 py-1.5 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">FAQ</a>
-                    <a href="{{ route('public.contact') }}" class="rounded-lg border border-slate-300 px-3 py-1.5 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">Contact</a>
-                    <a href="{{ route('jobs.index') }}" class="rounded-lg border border-slate-300 px-3 py-1.5 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">Jobs</a>
-                </div>
-            </section>
         </main>
+
         <x-landing.footer />
     </div>
+
+    <x-common.scroll-to-top />
 
     @if(!empty($breadcrumbs) && is_array($breadcrumbs))
         @php
@@ -107,25 +98,16 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const toggle = document.getElementById('theme-toggle');
-            const toggleIcon = document.getElementById('theme-toggle-icon');
-            const syncIcon = () => {
-                if (!toggleIcon) return;
-                const isDark = document.documentElement.classList.contains('dark');
-                toggleIcon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
-                if (window.createIcons && window.lucideIcons) window.createIcons({ icons: window.lucideIcons });
-            };
             if (toggle) {
                 toggle.addEventListener('click', () => {
                     document.documentElement.classList.toggle('dark');
                     const isDark = document.documentElement.classList.contains('dark');
                     localStorage.setItem('theme', isDark ? 'dark' : 'light');
-                    syncIcon();
                 });
             }
-            if (window.createIcons && window.lucideIcons) window.createIcons({ icons: window.lucideIcons });
-            syncIcon();
         });
     </script>
+
     @livewireScripts
 </body>
 </html>

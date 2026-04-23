@@ -38,13 +38,22 @@
                 {{-- Auth --}}
                 <div class="flex items-center gap-3">
                     @auth
+                        @php
+                            $candidateUser = auth()->user();
+                            $candidateAvatarUrl = $candidateUser?->avatar_url;
+                        @endphp
+
                         <div class="flex items-center gap-3">
-                            <div class="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-sm font-bold text-white">
-                                {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-                            </div>
+                            @if($candidateAvatarUrl)
+                                <img src="{{ $candidateAvatarUrl }}" alt="{{ $candidateUser?->name ?? 'User' }}" class="h-8 w-8 rounded-full object-cover" />
+                            @else
+                                <div class="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-sm font-bold text-white">
+                                    {{ strtoupper(substr($candidateUser?->name ?? 'U', 0, 1)) }}
+                                </div>
+                            @endif
                             <div class="hidden md:block">
                                 <p class="text-sm font-semibold text-gray-700 dark:text-white">
-                                    {{ auth()->user()->name }}
+                                    {{ $candidateUser?->name }}
                                 </p>
                             </div>
                             <div class="dropdown dropdown-end">
@@ -94,6 +103,8 @@
             <p>&copy; {{ date('Y') }} {{ config('app.name', 'NovaHire') }}. Powered by AI hiring workflows.</p>
         </div>
     </footer>
+
+    <x-common.scroll-to-top />
 
     @livewireScripts
     @stack('scripts')

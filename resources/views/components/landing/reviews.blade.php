@@ -4,31 +4,31 @@
             'quote' => 'We cut screening time by over 60% and improved shortlist quality in the first week. The AI output is practical and easy for our hiring managers to trust.',
             'name' => 'Sarah Chen',
             'designation' => 'Head of Talent',
-            'src' => 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=1200&q=80',
+            'src' => 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=720&q=70',
         ],
         [
             'quote' => 'The ranking flow feels built for real recruiting teams. We spend less time sorting CVs and more time interviewing the right candidates.',
             'name' => 'Marcus Lee',
             'designation' => 'Recruiting Lead',
-            'src' => 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=1200&q=80',
+            'src' => 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=720&q=70',
         ],
         [
             'quote' => 'Collaboration between HR and hiring managers is finally clean. Pipeline visibility, interview coordination, and AI notes all live in one place.',
             'name' => 'Elena Roy',
             'designation' => 'HR Director',
-            'src' => 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=1200&q=80',
+            'src' => 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=720&q=70',
         ],
         [
             'quote' => 'I now review only the strongest profiles. The platform removed repetitive filtering work and made hiring discussions much faster.',
             'name' => 'David Kim',
             'designation' => 'Hiring Manager',
-            'src' => 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=1200&q=80',
+            'src' => 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=720&q=70',
         ],
     ];
 @endphp
 
 <section id="reviews"
-    class="nh-section overflow-hidden border-y border-slate-200 bg-[radial-gradient(900px_circle_at_15%_20%,rgba(70,95,255,0.08),transparent_45%),radial-gradient(700px_circle_at_85%_18%,rgba(14,165,233,0.10),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.94))] dark:border-slate-800 dark:bg-[radial-gradient(900px_circle_at_15%_20%,rgba(70,95,255,0.16),transparent_45%),radial-gradient(700px_circle_at_85%_18%,rgba(14,165,233,0.12),transparent_42%),linear-gradient(180deg,rgba(2,6,23,0.96),rgba(2,6,23,0.98))]"
+    class="cv-auto nh-section overflow-hidden border-y border-slate-200 bg-[radial-gradient(900px_circle_at_15%_20%,rgba(70,95,255,0.08),transparent_45%),radial-gradient(700px_circle_at_85%_18%,rgba(14,165,233,0.10),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.94))] dark:border-slate-800 dark:bg-[radial-gradient(900px_circle_at_15%_20%,rgba(70,95,255,0.16),transparent_45%),radial-gradient(700px_circle_at_85%_18%,rgba(14,165,233,0.12),transparent_42%),linear-gradient(180deg,rgba(2,6,23,0.96),rgba(2,6,23,0.98))]"
     x-data="{
         testimonials: {{ Js::from($testimonials) }},
         activeIndex: 0,
@@ -131,8 +131,10 @@
                                 :alt="testimonial.name"
                                 class="circular-testimonial-image"
                                 :style="imageStyle(index)"
-                                loading="eager"
-                                decoding="async">
+                                :loading="index === activeIndex ? 'eager' : 'lazy'"
+                                decoding="async"
+                                width="720"
+                                height="720">
                         </template>
                     </div>
                 </div>

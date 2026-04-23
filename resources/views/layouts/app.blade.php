@@ -15,6 +15,13 @@
     <!-- Apply dark mode immediately to prevent flash -->
     <script>
         (function () {
+            try {
+                const sidebarExpanded = localStorage.getItem('sidebar-expanded');
+                document.documentElement.dataset.sidebarExpanded = sidebarExpanded === 'false' ? 'false' : 'true';
+            } catch (error) {
+                document.documentElement.dataset.sidebarExpanded = 'true';
+            }
+
             const savedTheme = localStorage.getItem('theme');
             const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
             const theme = savedTheme || systemTheme;
@@ -28,16 +35,14 @@
 
 </head>
 
-<body class="min-h-screen overflow-x-hidden bg-gray-50 text-gray-900 antialiased dark:bg-gray-950 dark:text-gray-100" x-data="{ loaded: true }">
-
-    {{-- preloader --}}
-    <x-common.preloader />
-    {{-- preloader end --}}
+<body class="min-h-screen overflow-x-hidden bg-gray-50 text-gray-900 antialiased dark:bg-gray-950 dark:text-gray-100">
 
     <div class="min-h-screen overflow-x-hidden bg-gray-50 dark:bg-gray-950 xl:flex">
         @include('layouts.sidebar')
 
-        <div class="min-w-0 flex-1 transition-all duration-300 ease-in-out" :class="{
+        <div class="app-main-shell min-w-0 flex-1" :class="{
+                'transition-none': !$store.sidebar.isReady,
+                'transition-all duration-300 ease-in-out': $store.sidebar.isReady,
                 'xl:ml-[290px]': $store.sidebar.isExpanded || $store.sidebar.isHovered,
                 'xl:ml-[90px]': !$store.sidebar.isExpanded && !$store.sidebar.isHovered,
                 'ml-0': $store.sidebar.isMobileOpen
@@ -69,6 +74,8 @@
         </div>
         @stack('toasts')
     </div>
+
+    <x-common.scroll-to-top />
 
     @stack('scripts')
     @livewireScripts

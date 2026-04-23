@@ -73,7 +73,7 @@
             </div>
         </div>
 
-        <div class="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <div class="cv-auto grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
             <section class="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900/60" data-modules>
                 <p class="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600 dark:text-brand-300">Interactive Modules</p>
                 <h2 class="mt-2 text-2xl font-bold text-slate-900 dark:text-white">Explore capabilities by hiring objective</h2>
@@ -150,7 +150,7 @@
             </section>
         </div>
 
-        <div class="grid gap-6 lg:grid-cols-[1fr_1fr]">
+        <div class="cv-auto grid gap-6 lg:grid-cols-[1fr_1fr]">
             <section class="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900/60" data-role-focus>
                 <p class="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600 dark:text-brand-300">Role Focus</p>
                 <h2 class="mt-2 text-2xl font-bold text-slate-900 dark:text-white">See value by user role</h2>
@@ -190,7 +190,7 @@
             </section>
         </div>
 
-        <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <div class="cv-auto grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             @foreach($features as $feature)
                 <article class="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900/60">
                     <h2 class="text-lg font-semibold text-slate-900 dark:text-white">{{ data_get($feature, 'title') }}</h2>
@@ -199,7 +199,7 @@
             @endforeach
         </div>
 
-        <div class="rounded-3xl border border-brand-200 bg-gradient-to-r from-brand-50 to-cyan-50 p-8 dark:border-brand-700/50 dark:from-brand-500/10 dark:to-cyan-500/10">
+        <div class="cv-auto rounded-3xl border border-brand-200 bg-gradient-to-r from-brand-50 to-cyan-50 p-8 dark:border-brand-700/50 dark:from-brand-500/10 dark:to-cyan-500/10">
             <h2 class="text-2xl font-bold text-slate-900 dark:text-white">See all features in action</h2>
             <p class="mt-2 text-slate-700 dark:text-slate-300">Run a complete hiring cycle from job publishing to interview decisions.</p>
             <div class="mt-5 flex flex-wrap gap-3">

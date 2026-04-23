@@ -2,18 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Candidate;
 use App\Models\User;
+use App\Services\Auth\CandidateOnboardingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
-use Spatie\Permission\Models\Role;
 use Throwable;
 
 class SocialAuthController extends Controller
 {
+    public function __construct(
+        private readonly CandidateOnboardingService $candidateOnboarding,
+    ) {}
+
     public function redirectToGoogle(): RedirectResponse
     {
         return Socialite::driver('google')
@@ -33,13 +36,15 @@ class SocialAuthController extends Controller
             ]);
         }
 
-        if (empty($googleUser->getEmail())) {
+        $googleEmail = Str::lower(trim((string) $googleUser->getEmail()));
+
+        if ($googleEmail === '') {
             return redirect()->route('login')->withErrors([
                 'email' => 'Google account email is required.',
             ]);
         }
 
-        $user = User::where('email', $googleUser->getEmail())->first();
+        $user = User::where('email', $googleEmail)->first();
 
         if ($user && ! $user->hasRole('candidate')) {
             return redirect()->route('login')->withErrors([
@@ -47,38 +52,87 @@ class SocialAuthController extends Controller
             ]);
         }
 
+        if ($user && (string) ($user->status ?? 'active') !== 'active') {
+            return redirect()->route('login')->withErrors([
+                'email' => 'This account is not active. Please contact support.',
+            ]);
+        }
+
         $hasGoogleIdColumn = Schema::hasColumn('users', 'google_id');
+        $googleAvatar = $this->resolveGoogleAvatarUrl($googleUser->getAvatar());
 
         if (! $user) {
             $attributes = [
                 'name' => $googleUser->getName() ?: 'Candidate',
-                'email' => $googleUser->getEmail(),
+                'email' => $googleEmail,
                 'password' => Str::password(32),
                 'email_verified_at' => now(),
+                'status' => 'active',
             ];
             if ($hasGoogleIdColumn) {
                 $attributes['google_id'] = $googleUser->getId();
             }
+            if ($googleAvatar !== null) {
+                $attributes['avatar'] = $googleAvatar;
+            }
 
-            $user = User::create($attributes);
+            $user = $this->candidateOnboarding->createCandidateUser($attributes);
+        } else {
+            $updates = [];
 
-            $user->assignRole(Role::findOrCreate('candidate', 'web'));
-        } elseif ($hasGoogleIdColumn && empty($user->google_id)) {
-            $user->forceFill(['google_id' => $googleUser->getId()])->save();
+            if ($hasGoogleIdColumn && empty($user->google_id)) {
+                $updates['google_id'] = $googleUser->getId();
+            }
+
+            if ($this->shouldSyncGoogleAvatar($user, $googleAvatar)) {
+                $updates['avatar'] = $googleAvatar;
+            }
+
+            if ($updates !== []) {
+                $user->forceFill($updates)->save();
+            }
+
+            $user = $this->candidateOnboarding->syncCandidateAccount($user);
         }
-
-        Candidate::updateOrCreate(
-            ['user_id' => $user->id],
-            [
-                'email' => $user->email,
-                'name' => $user->name,
-                'company_id' => $user->company_id,
-            ]
-        );
 
         $user->forceFill(['last_login_at' => now()])->save();
         Auth::login($user, true);
 
         return redirect()->route('candidate.profile');
+    }
+
+    private function resolveGoogleAvatarUrl(?string $avatar): ?string
+    {
+        $avatar = trim((string) $avatar);
+        if ($avatar === '') {
+            return null;
+        }
+
+        return filter_var($avatar, FILTER_VALIDATE_URL) ? $avatar : null;
+    }
+
+    private function shouldSyncGoogleAvatar(User $user, ?string $googleAvatar): bool
+    {
+        if ($googleAvatar === null) {
+            return false;
+        }
+
+        $currentAvatar = trim((string) ($user->avatar ?? ''));
+        if ($currentAvatar === '') {
+            return true;
+        }
+
+        return $this->isGoogleAvatarUrl($currentAvatar);
+    }
+
+    private function isGoogleAvatarUrl(string $url): bool
+    {
+        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+        if ($host === '') {
+            return false;
+        }
+
+        return str_contains($host, 'googleusercontent.com')
+            || str_contains($host, 'ggpht.com');
     }
 }

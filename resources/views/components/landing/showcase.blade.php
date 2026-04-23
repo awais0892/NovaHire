@@ -5,7 +5,6 @@
             'title' => 'AI CV Screening',
             'description' => 'Parse resumes, extract structured skills, and score candidates against role requirements in seconds.',
             'tag' => 'Recruiter',
-            'icon' => 'brain-circuit',
             'href' => route('public.features'),
             'cta' => 'Explore AI',
             'tone' => 'from-brand-500 via-sky-500 to-cyan-400',
@@ -15,7 +14,6 @@
             'title' => 'Candidate Ranking',
             'description' => 'Move from raw applications to a defensible shortlist with explainable AI match signals.',
             'tag' => 'Shortlist',
-            'icon' => 'list-ordered',
             'href' => route('public.product'),
             'cta' => 'View ranking flow',
             'tone' => 'from-emerald-500 via-teal-500 to-sky-500',
@@ -25,7 +23,6 @@
             'title' => 'Hiring Manager Review',
             'description' => 'Share score rationale, notes, and interview decisions in one role-based workspace.',
             'tag' => 'Collaboration',
-            'icon' => 'users',
             'href' => route('public.features'),
             'cta' => 'See collaboration',
             'tone' => 'from-violet-500 via-fuchsia-500 to-brand-500',
@@ -35,7 +32,6 @@
             'title' => 'Interview Workflow',
             'description' => 'Coordinate invitations, reminders, and status changes without losing candidate context.',
             'tag' => 'Automation',
-            'icon' => 'calendar-check-2',
             'href' => route('public.product'),
             'cta' => 'Open workflow',
             'tone' => 'from-amber-500 via-orange-500 to-rose-500',
@@ -45,7 +41,6 @@
             'title' => 'Recruitment Analytics',
             'description' => 'Track conversion, throughput, and team performance across every hiring stage.',
             'tag' => 'Insights',
-            'icon' => 'bar-chart-3',
             'href' => route('public.pricing'),
             'cta' => 'See plans',
             'tone' => 'from-slate-700 via-slate-900 to-black',
@@ -53,7 +48,7 @@
     ];
 @endphp
 
-<section class="nh-section overflow-hidden"
+<section class="nh-section cv-auto overflow-hidden"
     x-data="{
         items: {{ Js::from($stackItems) }},
         active: 0,
@@ -170,12 +165,9 @@
                                 <div class="card-stack-overlay"></div>
 
                                 <div class="relative z-10 flex h-full flex-col justify-between p-6 sm:p-7">
-                                    <div class="flex items-start justify-between gap-3">
+                                    <div class="flex items-start gap-3">
                                         <span class="inline-flex items-center rounded-full border border-white/18 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/85 backdrop-blur">
                                             <span x-text="item.tag"></span>
-                                        </span>
-                                        <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/14 bg-black/20 text-white/90 backdrop-blur">
-                                            <i :data-lucide="item.icon" class="h-5 w-5"></i>
                                         </span>
                                     </div>
 
@@ -190,9 +182,8 @@
                                             <span class="text-xs font-medium uppercase tracking-[0.18em]">Live workflow</span>
                                         </div>
                                         <a :href="item.href"
-                                            class="inline-flex items-center gap-2 rounded-full border border-white/14 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-white transition hover:bg-white/18">
+                                            class="inline-flex items-center rounded-full border border-white/14 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-white transition hover:bg-white/18">
                                             <span x-text="item.cta"></span>
-                                            <i data-lucide="square-arrow-out-up-right" class="h-4 w-4"></i>
                                         </a>
                                     </div>
                                 </div>

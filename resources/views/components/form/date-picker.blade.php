@@ -11,8 +11,15 @@
 <div x-data="{
     flatpickrInstance: null,
     init() {
-        this.$nextTick(() => {
-            this.flatpickrInstance = flatpickr(this.$refs.dateInput, {
+        this.$nextTick(async () => {
+            const flatpickrLib = typeof window.ensureFlatpickr === 'function'
+                ? await window.ensureFlatpickr()
+                : window.flatpickr;
+            if (typeof flatpickrLib !== 'function') {
+                return;
+            }
+
+            this.flatpickrInstance = flatpickrLib(this.$refs.dateInput, {
                 mode: '{{ $mode }}',
                 static: true,
                 monthSelectorType: 'static',

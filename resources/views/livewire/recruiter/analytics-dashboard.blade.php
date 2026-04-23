@@ -303,14 +303,24 @@ function analyticsCharts() {
     const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
 
     return {
-        initCharts() { this.$nextTick(() => this.renderAll()); },
-        refreshCharts() {
+        async ensureChartLib() {
+            if (typeof window.ensureChartJs === 'function') {
+                await window.ensureChartJs();
+            }
+        },
+        async initCharts() {
+            await this.ensureChartLib();
+            this.$nextTick(() => this.renderAll());
+        },
+        async refreshCharts() {
+            await this.ensureChartLib();
             this.$nextTick(() => {
                 Object.keys(charts).forEach(id => destroyChart(id));
                 this.renderAll();
             });
         },
         renderAll() {
+            if (typeof window.Chart !== 'function') return;
             this.renderApplicationsChart();
             this.renderJobsChart();
             this.renderRecommendationChart();
@@ -321,9 +331,10 @@ function analyticsCharts() {
 
         renderApplicationsChart() {
             const el = document.getElementById('applicationsChart');
-            if (!el) return;
+            const ChartCtor = window.Chart;
+            if (!el || typeof ChartCtor !== 'function') return;
             destroyChart('applicationsChart');
-            charts['applicationsChart'] = new Chart(el, {
+            charts['applicationsChart'] = new ChartCtor(el, {
                 type: 'line',
                 data: {
                     labels: analyticsData.applicationsOverTime.labels,
@@ -356,9 +367,10 @@ function analyticsCharts() {
 
         renderJobsChart() {
             const el = document.getElementById('jobsChart');
-            if (!el) return;
+            const ChartCtor = window.Chart;
+            if (!el || typeof ChartCtor !== 'function') return;
             destroyChart('jobsChart');
-            charts['jobsChart'] = new Chart(el, {
+            charts['jobsChart'] = new ChartCtor(el, {
                 type: 'bar',
                 data: {
                     labels: analyticsData.applicationsByJob.map(j => j.title),
@@ -384,10 +396,11 @@ function analyticsCharts() {
 
         renderRecommendationChart() {
             const el = document.getElementById('recommendationChart');
-            if (!el) return;
+            const ChartCtor = window.Chart;
+            if (!el || typeof ChartCtor !== 'function') return;
             destroyChart('recommendationChart');
             const rec = analyticsData.recommendationData;
-            charts['recommendationChart'] = new Chart(el, {
+            charts['recommendationChart'] = new ChartCtor(el, {
                 type: 'doughnut',
                 data: {
                     labels: Object.keys(rec).map(k => k.toUpperCase()),
@@ -409,10 +422,11 @@ function analyticsCharts() {
 
         renderFunnelDoughnut() {
             const el = document.getElementById('funnelDoughnut');
-            if (!el) return;
+            const ChartCtor = window.Chart;
+            if (!el || typeof ChartCtor !== 'function') return;
             destroyChart('funnelDoughnut');
             const funnel = analyticsData.funnelData;
-            charts['funnelDoughnut'] = new Chart(el, {
+            charts['funnelDoughnut'] = new ChartCtor(el, {
                 type: 'doughnut',
                 data: {
                     labels: Object.keys(funnel).map(k => k.toUpperCase()),
@@ -433,10 +447,11 @@ function analyticsCharts() {
 
         renderScoreChart() {
             const el = document.getElementById('scoreChart');
-            if (!el) return;
+            const ChartCtor = window.Chart;
+            if (!el || typeof ChartCtor !== 'function') return;
             destroyChart('scoreChart');
             const scores = analyticsData.scoreDistribution;
-            charts['scoreChart'] = new Chart(el, {
+            charts['scoreChart'] = new ChartCtor(el, {
                 type: 'bar',
                 data: {
                     labels: Object.keys(scores),
@@ -460,10 +475,11 @@ function analyticsCharts() {
 
         renderTimeToHireChart() {
             const el = document.getElementById('timeToHireChart');
-            if (!el) return;
+            const ChartCtor = window.Chart;
+            if (!el || typeof ChartCtor !== 'function') return;
             destroyChart('timeToHireChart');
             const data = analyticsData.timeToHireData;
-            charts['timeToHireChart'] = new Chart(el, {
+            charts['timeToHireChart'] = new ChartCtor(el, {
                 type: 'bar',
                 data: {
                     labels: data.map(d => d.title),

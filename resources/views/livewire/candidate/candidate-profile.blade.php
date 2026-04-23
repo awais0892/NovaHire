@@ -15,6 +15,29 @@
         <div class="card border-gray-200/80 bg-white/95 p-6 shadow-sm shadow-gray-900/5 dark:border-gray-800/80 dark:bg-gray-900/70 dark:shadow-black/30 xl:col-span-2">
             <form wire:submit="save" class="space-y-6">
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div class="md:col-span-2 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+                        <label class="label mb-3">Profile Photo</label>
+                        <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
+                            @if($newAvatar)
+                                <img src="{{ $newAvatar->temporaryUrl() }}" alt="{{ $name }}" class="h-20 w-20 rounded-full border border-gray-200 object-cover dark:border-gray-700" />
+                            @elseif($avatarUrl !== '')
+                                <img src="{{ $avatarUrl }}" alt="{{ $name }}" class="h-20 w-20 rounded-full border border-gray-200 object-cover dark:border-gray-700" />
+                            @else
+                                <div class="flex h-20 w-20 items-center justify-center rounded-full border border-gray-200 bg-brand-100 text-2xl font-semibold text-brand-600 dark:border-gray-700 dark:bg-gray-800 dark:text-brand-400">
+                                    {{ strtoupper(substr($name !== '' ? $name : 'U', 0, 1)) }}
+                                </div>
+                            @endif
+
+                            <div class="flex-1">
+                                <input id="profileAvatarUpload" type="file" wire:model="newAvatar" accept=".jpg,.jpeg,.png,.webp,.avif,image/jpeg,image/png,image/webp,image/avif" class="hidden" />
+                                <label for="profileAvatarUpload" class="btn btn-outline rounded-xl px-4">Choose Photo</label>
+                                <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">JPG, PNG, WEBP, or AVIF. Maximum size: 2MB.</p>
+                                @error('newAvatar') <p class="mt-1 text-xs text-error-500">{{ $message }}</p> @enderror
+                                <div wire:loading wire:target="newAvatar" class="mt-1 text-xs text-brand-500">Uploading selected image...</div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="md:col-span-2">
                         <label class="label">Full Name</label>
                         <input wire:model="name" type="text" class="input" />

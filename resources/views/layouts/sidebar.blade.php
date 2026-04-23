@@ -3,33 +3,42 @@
     $menuGroups = MenuHelper::getMenuGroups();
 
     // Get current path
-    $currentPath = request()->path();
+    $currentPath = '/' . ltrim(request()->path(), '/');
+    $normalizedCurrentPath = rtrim($currentPath, '/');
+    if ($normalizedCurrentPath === '') {
+        $normalizedCurrentPath = '/';
+    }
+
+    $initialOpenSubmenus = [];
+    foreach ($menuGroups as $groupIndex => $menuGroup) {
+        foreach (($menuGroup['items'] ?? []) as $itemIndex => $item) {
+            if (!isset($item['subItems']) || !is_array($item['subItems'])) {
+                continue;
+            }
+
+            foreach ($item['subItems'] as $subItem) {
+                $subPath = '/' . ltrim((string) ($subItem['path'] ?? '/'), '/');
+                $normalizedSubPath = rtrim($subPath, '/');
+                if ($normalizedSubPath === '') {
+                    $normalizedSubPath = '/';
+                }
+
+                $isActiveSubPath = $normalizedCurrentPath === $normalizedSubPath
+                    || ($normalizedSubPath !== '/' && str_starts_with($normalizedCurrentPath, $normalizedSubPath . '/'));
+
+                if ($isActiveSubPath) {
+                    $initialOpenSubmenus["{$groupIndex}-{$itemIndex}"] = true;
+                    break;
+                }
+            }
+        }
+    }
 @endphp
 
 <aside id="sidebar"
-    class="fixed flex flex-col mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-200"
+    class="app-sidebar-shell fixed flex flex-col mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen z-50 border-r border-gray-200"
     x-data="{
-        openSubmenus: {},
-        init() {
-            // Auto-open Dashboard menu on page load
-            this.initializeActiveMenus();
-        },
-        initializeActiveMenus() {
-            const currentPath = '{{ $currentPath }}';
-
-            @foreach ($menuGroups as $groupIndex => $menuGroup)
-                @foreach ($menuGroup['items'] as $itemIndex => $item)
-                    @if (isset($item['subItems']))
-                        // Check if any submenu item matches current path
-                        @foreach ($item['subItems'] as $subItem)
-                            if (currentPath === '{{ ltrim($subItem['path'], '/') }}' ||
-                                window.location.pathname === '{{ $subItem['path'] }}') {
-                                this.openSubmenus['{{ $groupIndex }}-{{ $itemIndex }}'] = true;
-                        } @endforeach
-                    @endif
-                @endforeach
-            @endforeach
-        },
+        openSubmenus: @js($initialOpenSubmenus),
         toggleSubmenu(groupIndex, itemIndex) {
             const key = groupIndex + '-' + itemIndex;
             const newState = !this.openSubmenus[key];
@@ -55,7 +64,7 @@
                 return trimmed === '' ? '/' : trimmed;
             };
 
-            const current = normalize(window.location.pathname || '{{ '/' . ltrim($currentPath, '/') }}');
+            const current = normalize('{{ $currentPath }}');
             const target = normalize(path);
 
             if (target === '/') {
@@ -64,26 +73,30 @@
 
             return current === target || current.startsWith(target + '/');
         }
-    }" :class="{
+    }"
+    :data-compact="(!$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen) ? '1' : '0'"
+    :class="{
         'w-[290px]': $store.sidebar.isExpanded || $store.sidebar.isMobileOpen || $store.sidebar.isHovered,
-        'w-[90px]': !$store.sidebar.isExpanded && !$store.sidebar.isHovered,
+        'w-[90px]': !$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen,
         'translate-x-0': $store.sidebar.isMobileOpen,
-        '-translate-x-full xl:translate-x-0': !$store.sidebar.isMobileOpen
-    }" @mouseenter="if (!$store.sidebar.isExpanded) $store.sidebar.setHovered(true)"
-    @mouseleave="$store.sidebar.setHovered(false)">
+        '-translate-x-full xl:translate-x-0': !$store.sidebar.isMobileOpen,
+        'transition-none': !$store.sidebar.isReady,
+        'transition-all duration-300 ease-in-out': $store.sidebar.isReady
+    }" @mouseenter="if (window.innerWidth >= 1280 && !$store.sidebar.isExpanded) $store.sidebar.setHovered(true)"
+    @mouseleave="if (window.innerWidth >= 1280) $store.sidebar.setHovered(false)">
     <!-- Logo Section -->
     <div class="pt-8 pb-7 flex" :class="(!$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen) ?
         'xl:justify-center' :
         'justify-start'">
-        <a href="/">
-            <img x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
-                class="dark:hidden h-10 w-auto object-contain" src="/images/logo/novahire-logo.png"
+        <a href="/" @click="if (window.innerWidth < 1280) $store.sidebar.setMobileOpen(false)">
+            <img class="sidebar-expand-only dark:hidden h-10 w-auto object-contain" src="/images/logo/novahire-wordmark.svg"
                 alt="NovaHire Logo" />
-            <img x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
-                class="hidden dark:block h-10 w-auto object-contain" src="/images/logo/novahire-logo.png"
+            <img class="sidebar-expand-only hidden dark:block h-10 w-auto object-contain" src="/images/logo/novahire-wordmark-light.svg"
                 alt="NovaHire Logo" />
-            <img x-show="!$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen"
-                class="h-8 w-auto object-contain" src="/images/logo/novahire-icon.png" alt="NovaHire Icon" />
+            <img class="sidebar-collapse-only h-8 w-auto object-contain dark:hidden" src="/images/logo/novahire-mark.svg"
+                alt="NovaHire Icon" />
+            <img class="sidebar-collapse-only hidden h-8 w-auto object-contain dark:block" src="/images/logo/novahire-mark-light.svg"
+                alt="NovaHire Icon" />
 
         </a>
     </div>
@@ -97,19 +110,17 @@
                         <!-- Menu Group Title -->
                         <h2 class="mb-4 text-xs uppercase flex leading-[20px] text-gray-400" :class="(!$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen) ?
                                 'lg:justify-center' : 'justify-start'">
-                            <template
-                                x-if="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen">
-                                <span>{{ $menuGroup['title'] }}</span>
-                            </template>
-                            <template
-                                x-if="!$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen">
+                            <span class="sidebar-expand-only">
+                                {{ $menuGroup['title'] }}
+                            </span>
+                            <span class="sidebar-collapse-only">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
                                     xmlns="http://www.w3.org/2000/svg">
                                     <path fill-rule="evenodd" clip-rule="evenodd"
                                         d="M5.99915 10.2451C6.96564 10.2451 7.74915 11.0286 7.74915 11.9951V12.0051C7.74915 12.9716 6.96564 13.7551 5.99915 13.7551C5.03265 13.7551 4.24915 12.9716 4.24915 12.0051V11.9951C4.24915 11.0286 5.03265 10.2451 5.99915 10.2451ZM17.9991 10.2451C18.9656 10.2451 19.7491 11.0286 19.7491 11.9951V12.0051C19.7491 12.9716 18.9656 13.7551 17.9991 13.7551C17.0326 13.7551 16.2491 12.9716 16.2491 12.0051V11.9951C16.2491 11.0286 17.0326 10.2451 17.9991 10.2451ZM13.7491 11.9951C13.7491 11.0286 12.9656 10.2451 11.9991 10.2451C11.0326 10.2451 10.2491 11.0286 10.2491 11.9951V12.0051C10.2491 12.9716 11.0326 13.7551 11.9991 13.7551C12.9656 13.7551 13.7491 12.9716 13.7491 12.0051V11.9951Z"
                                         fill="currentColor" />
                                 </svg>
-                            </template>
+                            </span>
                         </h2>
 
                         <!-- Menu Items -->
@@ -133,9 +144,7 @@
                                             </span>
 
                                             <!-- Text -->
-                                            <span
-                                                x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
-                                                class="menu-item-text flex items-center gap-2">
+                                            <span class="sidebar-expand-only menu-item-text flex items-center gap-2">
                                                 {{ $item['name'] }}
                                                 @if (!empty($item['new']))
                                                     <span class="absolute right-10" :class="isActive('{{ $item['path'] ?? '' }}') ?
@@ -147,8 +156,8 @@
                                             </span>
 
                                             <!-- Chevron Down Icon -->
-                                            <svg x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
-                                                class="ml-auto w-5 h-5 transition-transform duration-200" :class="{
+                                            <svg class="sidebar-expand-only ml-auto w-5 h-5 transition-transform duration-200"
+                                                :class="{
                                                                 'rotate-180 text-brand-500': isSubmenuOpen({{ $groupIndex }},
                                                                     {{ $itemIndex }})
                                                             }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -159,11 +168,14 @@
 
                                         <!-- Submenu -->
                                         <div
+                                            x-cloak
                                             x-show="isSubmenuOpen({{ $groupIndex }}, {{ $itemIndex }}) && ($store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen)">
                                             <ul class="mt-2 space-y-1 ml-9">
                                                 @foreach ($item['subItems'] as $subItem)
                                                     <li>
-                                                        <a href="{{ $subItem['path'] }}" class="menu-dropdown-item" :class="isActive('{{ $subItem['path'] }}') ?
+                                                        <a href="{{ $subItem['path'] }}"
+                                                            @click="if (window.innerWidth < 1280) $store.sidebar.setMobileOpen(false)"
+                                                            class="menu-dropdown-item" :class="isActive('{{ $subItem['path'] }}') ?
                                                                                 'menu-dropdown-item-active' :
                                                                                 'menu-dropdown-item-inactive'">
                                                             {{ $subItem['name'] }}
@@ -192,7 +204,9 @@
                                         </div>
                                     @else
                                         <!-- Simple Menu Item -->
-                                        <a href="{{ $item['path'] }}" class="menu-item group" :class="[
+                                        <a href="{{ $item['path'] }}"
+                                            @click="if (window.innerWidth < 1280) $store.sidebar.setMobileOpen(false)"
+                                            class="menu-item group" :class="[
                                                             isActive('{{ $item['path'] }}') ? 'menu-item-active' :
                                                             'menu-item-inactive',
                                                             (!$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen) ?
@@ -207,9 +221,7 @@
                                             </span>
 
                                             <!-- Text -->
-                                            <span
-                                                x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
-                                                class="menu-item-text flex items-center gap-2">
+                                            <span class="sidebar-expand-only menu-item-text flex items-center gap-2">
                                                 {{ $item['name'] }}
                                                 @if (!empty($item['new']))
                                                     <span
@@ -229,8 +241,7 @@
         </nav>
 
         <!-- Sidebar Widget -->
-        <div x-data x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
-            x-transition class="mt-auto">
+        <div class="sidebar-expand-only mt-auto">
             @include('layouts.sidebar-widget')
         </div>
 
@@ -239,4 +250,5 @@
 
 <!-- Mobile Overlay -->
 <div x-show="$store.sidebar.isMobileOpen" @click="$store.sidebar.setMobileOpen(false)"
+    x-cloak
     class="fixed z-40 h-screen w-full bg-gray-900/50"></div>

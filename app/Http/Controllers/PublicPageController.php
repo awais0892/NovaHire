@@ -73,29 +73,29 @@ class PublicPageController extends Controller
                 'type' => 'image',
                 'title' => 'AI Screening Intelligence',
                 'caption' => 'Recruiters get context-rich screening signals with transparent scoring.',
-                'src' => asset('images/vecteezy_businessman-holding-global-internet-connection-technology_7252575.jpg'),
+                'src' => asset('images/optimized/vecteezy-businessman-1600.webp'),
                 'source_url' => 'https://www.vecteezy.com/photo/7252575-businessman-holding-global-internet-connection-technology-business-and-digital-marketing',
             ],
             [
                 'type' => 'image',
                 'title' => 'Leadership Decisions at Scale',
                 'caption' => 'Align hiring managers and recruiters around consistent decision criteria.',
-                'src' => asset('images/vecteezy_golden-chess-pawn-pieces-or-leader-businessman-stand-out-of_6614498.jpg'),
+                'src' => asset('images/optimized/vecteezy-golden-chess-1600.webp'),
                 'source_url' => 'https://www.vecteezy.com/photo/6614498-golden-chess-pawn-pieces-or-leader-businessman-stand-out-of-crowd-people-of-silver-men-leadership-business-team-teamwork-and-human-resource-management-concept',
             ],
             [
                 'type' => 'image',
                 'title' => 'Hiring Momentum',
                 'caption' => 'Operate with confidence from first review to offer acceptance.',
-                'src' => asset('images/large-vecteezy_ai-generated-a-silhouette-of-a-person-standing-on-top-of-a_40247032_large.jpg'),
+                'src' => asset('images/optimized/vecteezy-silhouette-1600.webp'),
                 'source_url' => 'https://www.vecteezy.com/photo/40247032-ai-generated-a-silhouette-of-a-person-standing-on-top-of-a-mountain-peak-looking-out-at-a-sunset-symbolizing-reaching-business-goals',
             ],
             [
                 'type' => 'video',
                 'title' => 'Platform Motion Preview',
-                'caption' => 'Visual layer used in the product hero to communicate live, data-driven operations.',
-                'src' => asset('images/vecteezy_tech-abstract-green-screen-transition-4k-hd-video_22653032.mp4'),
-                'source_url' => 'https://www.vecteezy.com/video/76380061-abstract-digital-technology-background-with-glowing-green-squares-motion',
+                'caption' => 'Lightweight recruiting motion loop used to keep product interactions responsive.',
+                'src' => asset('animations/roles/recruiter-role.mp4'),
+                'source_url' => 'https://lottiefiles.com/',
             ],
         ];
 
@@ -209,22 +209,22 @@ class PublicPageController extends Controller
             [
                 'title' => 'Connected Hiring Operations',
                 'caption' => 'A unified recruitment surface for sourcing, screening, and collaboration.',
-                'src' => asset('images/vecteezy_businessman-holding-global-internet-connection-technology_7252575.jpg'),
+                'src' => asset('images/optimized/vecteezy-businessman-1600.webp'),
                 'source_url' => 'https://www.vecteezy.com/photo/7252575-businessman-holding-global-internet-connection-technology-business-and-digital-marketing',
                 'type' => 'image',
             ],
             [
                 'title' => 'Decision Leadership',
                 'caption' => 'Structured workflows help teams make consistent hiring decisions.',
-                'src' => asset('images/vecteezy_golden-chess-pawn-pieces-or-leader-businessman-stand-out-of_6614498.jpg'),
+                'src' => asset('images/optimized/vecteezy-golden-chess-1600.webp'),
                 'source_url' => 'https://www.vecteezy.com/photo/6614498-golden-chess-pawn-pieces-or-leader-businessman-stand-out-of-crowd-people-of-silver-men-leadership-business-team-teamwork-and-human-resource-management-concept',
                 'type' => 'image',
             ],
             [
                 'title' => 'Platform Motion Layer',
-                'caption' => 'Visual motion to reflect always-on recruitment pipelines and signals.',
-                'src' => asset('images/vecteezy_tech-abstract-green-screen-transition-4k-hd-video_22653032.mp4'),
-                'source_url' => 'https://www.vecteezy.com/video/76380061-abstract-digital-technology-background-with-glowing-green-squares-motion',
+                'caption' => 'Lightweight hiring motion layer for responsive feature storytelling.',
+                'src' => asset('animations/roles/recruiter-role.mp4'),
+                'source_url' => 'https://lottiefiles.com/',
                 'type' => 'video',
             ],
         ];
@@ -284,16 +284,20 @@ class PublicPageController extends Controller
             'content' => $content,
             'stripePlans' => $configuredPlans,
             'billingTrialDays' => (int) data_get(config('stripe.plans.basic'), 'trial_days', (int) config('stripe.trial_days', 30)),
-            'activeVouchers' => DiscountVoucher::query()
-                ->where('is_active', true)
-                ->where(function ($q) {
-                    $q->whereNull('starts_at')->orWhere('starts_at', '<=', now());
-                })
-                ->where(function ($q) {
-                    $q->whereNull('ends_at')->orWhere('ends_at', '>=', now());
-                })
-                ->orderBy('code')
-                ->get(['code', 'type', 'value', 'description', 'first_purchase_only', 'applies_to_plans', 'billing_cycles', 'min_subtotal', 'max_discount']),
+            'activeVouchers' => Cache::remember(
+                'public:pricing:active-vouchers:v1',
+                now()->addMinutes(10),
+                fn() => DiscountVoucher::query()
+                    ->where('is_active', true)
+                    ->where(function ($q) {
+                        $q->whereNull('starts_at')->orWhere('starts_at', '<=', now());
+                    })
+                    ->where(function ($q) {
+                        $q->whereNull('ends_at')->orWhere('ends_at', '>=', now());
+                    })
+                    ->orderBy('code')
+                    ->get(['code', 'type', 'value', 'description', 'first_purchase_only', 'applies_to_plans', 'billing_cycles', 'min_subtotal', 'max_discount'])
+            ),
             'platformMetrics' => $this->platformMetrics(),
             'metaImage' => asset('images/og/pricing.svg'),
             'breadcrumbs' => [

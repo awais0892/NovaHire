@@ -78,7 +78,7 @@ class LandingPageController extends Controller
         }
 
         return view('pages.landing', [
-            'title' => 'OVA Recruiter App',
+            'title' => config('app.name', 'NovaHire'),
             'content' => $content,
             'stripePlans' => $stripePlans,
             'featuredJobs' => $featuredJobs,

@@ -202,6 +202,7 @@
                             clearMethod: 'clearSelectedSearchLocation',
                             browserLocationMethod: 'useBrowserLocation',
                             allowCurrentLocation: true,
+                            autoRequestCurrentLocation: true,
                         })"
                         x-init="init()"
                         @click.outside="close()"
@@ -530,8 +531,8 @@
                         'center' => [(float) $locationLatitude, (float) $locationLongitude],
                         'zoom' => $locationFromBrowser ? 14 : 12,
                         'startZoom' => 4,
-                        'cinematic' => $locationFromBrowser,
-                        'animateKey' => $locationFromBrowser ? sprintf('browser:%0.5f:%0.5f', (float) $locationLatitude, (float) $locationLongitude) : null,
+                        'cinematic' => false,
+                        'animateKey' => null,
                         'fitToMarkers' => false,
                         'markers' => [
                             [

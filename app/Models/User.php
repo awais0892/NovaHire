@@ -7,6 +7,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements MustVerifyEmail
@@ -144,5 +145,24 @@ class User extends Authenticatable implements MustVerifyEmail
     private function broadcastNotificationsEnabled(): bool
     {
         return (bool) config('recruitment.realtime_notifications.broadcast_enabled', false);
+    }
+
+    public function getAvatarUrlAttribute(): ?string
+    {
+        $avatar = trim((string) ($this->avatar ?? ''));
+
+        if ($avatar === '') {
+            return null;
+        }
+
+        if (filter_var($avatar, FILTER_VALIDATE_URL)) {
+            return $avatar;
+        }
+
+        if (str_starts_with($avatar, '/')) {
+            return $avatar;
+        }
+
+        return Storage::disk('public')->url($avatar);
     }
 }
