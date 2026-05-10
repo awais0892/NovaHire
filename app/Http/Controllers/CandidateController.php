@@ -212,13 +212,24 @@ class CandidateController extends Controller
 
         $filename = $candidate->cv_original_name ?: ('resume-' . $candidate->id . '.pdf');
         $path = $candidate->cv_path;
+        $disposition = request('disposition') === 'inline' ? 'inline' : 'attachment';
+        $headers = [
+            'Content-Type' => 'application/pdf',
+            'X-Frame-Options' => 'SAMEORIGIN',
+        ];
 
-        if (Storage::disk('public')->exists($path)) {
-            return Storage::disk('public')->download($path, $filename);
-        }
+        foreach (['private', 'public', config('filesystems.default', 'local')] as $diskName) {
+            if (!is_string($diskName) || $diskName === '') {
+                continue;
+            }
 
-        if (Storage::exists($path)) {
-            return Storage::download($path, $filename);
+            $disk = Storage::disk($diskName);
+
+            if (!$disk->exists($path)) {
+                continue;
+            }
+
+            return $disk->response($path, $filename, $headers, $disposition);
         }
 
         abort(404);
